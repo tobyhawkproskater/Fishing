@@ -1,0 +1,319 @@
+{
+  "headers": [
+    "Date",
+    "Fish",
+    "Pink",
+    "Coho",
+    "Chinook",
+    "Hours",
+    "Notes"
+  ],
+  "rows": [
+    {
+      "Date": "2025-08-13 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 4,
+      "Notes": "First fish, right off Maxwelton, 9:30am with the pink spinner"
+    },
+    {
+      "Date": "2025-08-14 00:00:00",
+      "Fish": 2,
+      "Pink": 2,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 12,
+      "Notes": "Long day, including time with Mark and Eli. Fished all over Maxwelton, Possession, Point no Point, 2 fish were just north of Hansville, Foulweather Bluff. Got gas too"
+    },
+    {
+      "Date": "2025-08-16 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 5,
+      "Notes": null
+    },
+    {
+      "Date": "2025-08-17 00:00:00",
+      "Fish": 2,
+      "Pink": 2,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 3,
+      "Notes": "Possession point, great sunny day during vacation. Carol went back to church for the day"
+    },
+    {
+      "Date": "2025-08-21 00:00:00",
+      "Fish": 4,
+      "Pink": 4,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 3,
+      "Notes": "Limited! All of them right off Maxwelton"
+    },
+    {
+      "Date": "2025-08-22 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 1.5,
+      "Notes": "Caught after dad went to bed. Used for Salmon burgers with R&H"
+    },
+    {
+      "Date": "2025-08-23 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 3,
+      "Notes": "With dad"
+    },
+    {
+      "Date": "2025-08-24 00:00:00",
+      "Fish": 5,
+      "Pink": 5,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 6,
+      "Notes": "3 hours in the morning at Useless Bay (3 fish), beautiful sunrise. Then 3 hours again with Josh at sunset (2 more, plus one he caught)."
+    },
+    {
+      "Date": "2025-08-25 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 2.5,
+      "Notes": "Not wanting to go home, and super long ferry lines anyway…"
+    },
+    {
+      "Date": "2025-08-28 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 3,
+      "Notes": "Fishing with Carol, plus one hour on my own beforehand"
+    },
+    {
+      "Date": "2025-08-29 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 5,
+      "Notes": "Work day, an hour on the water with Carol, dropped her off at the beach, then one more hour, then Sebo's, then Mick & Petina, then more fishing"
+    },
+    {
+      "Date": "2025-08-30 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 8,
+      "Notes": "8-4, including time with Josh and Isaiah. 1 hard one pink, but a big one"
+    },
+    {
+      "Date": "2025-08-31 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 6,
+      "Notes": "3 hours with Theo, then 3 hours in the evening"
+    },
+    {
+      "Date": "2025-09-01 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 5,
+      "Notes": "3 hours in the morning, 2 hours in the evening, with a Sandy Point visit in between"
+    },
+    {
+      "Date": "2025-09-04 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 1.5,
+      "Notes": "Testing trolling setup"
+    },
+    {
+      "Date": "2025-09-05 00:00:00",
+      "Fish": 1,
+      "Pink": 1,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 5.5,
+      "Notes": "1 pink right away, and some Coho battles at Posession, but lost them"
+    },
+    {
+      "Date": "2025-09-06 00:00:00",
+      "Fish": 1,
+      "Pink": 0,
+      "Coho": 1,
+      "Chinook": null,
+      "Hours": 5.5,
+      "Notes": "COHO!! 6! Two were wild, three got away at the boat (one MONSTER) and one keeper"
+    },
+    {
+      "Date": "2025-09-10 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 2.5,
+      "Notes": "Quick evening trip before day off. Beautiful evening, but no fish"
+    },
+    {
+      "Date": "2025-09-11 00:00:00",
+      "Fish": 2,
+      "Pink": 0,
+      "Coho": 2,
+      "Chinook": null,
+      "Hours": 8,
+      "Notes": "Two Coho while fishing with Josh, and then Emma and Carol came out. Emma caught a giant one, but it was wild."
+    },
+    {
+      "Date": "2025-09-12 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 2,
+      "Notes": "Quick lunch trip at Double Bluff. No fish, but that shelf looks promising."
+    },
+    {
+      "Date": "2025-09-19 00:00:00",
+      "Fish": 2,
+      "Pink": null,
+      "Coho": 1,
+      "Chinook": null,
+      "Hours": 5,
+      "Notes": "SO much fun with Brad, Miles, and Emma. 12 fish, 3 wilds, 2 keepers, 7 losses, a couple right at the boat. I dropped Emma's giant 8 pounder *@!!!"
+    },
+    {
+      "Date": "2025-09-20 00:00:00",
+      "Fish": 1,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 8,
+      "Notes": "Pretty much skunked. No herring strips left. A few big fish on the line, but only landed one 2 pound coho."
+    },
+    {
+      "Date": "2025-09-22 00:00:00",
+      "Fish": 1,
+      "Pink": null,
+      "Coho": 1,
+      "Chinook": null,
+      "Hours": 4,
+      "Notes": "HUGE 8 pound COHO. What a fight! So much fun. 5 shakers, and one 5 pound wild. The silver and red flasher seemed to work better than the yellow one."
+    },
+    {
+      "Date": "2025-09-23 00:00:00",
+      "Fish": 2,
+      "Pink": null,
+      "Coho": 2,
+      "Chinook": null,
+      "Hours": 5.5,
+      "Notes": "Tried the Shipwreck area for the first time, it was packed. Turns out it was the last day for that area. 2 wilds made it complicated."
+    },
+    {
+      "Date": "2025-10-03 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 6,
+      "Notes": "With Brad and Miles. They took 4 home, I had a big one on, but lost it."
+    },
+    {
+      "Date": "2025-10-04 00:00:00",
+      "Fish": 2,
+      "Pink": null,
+      "Coho": 1,
+      "Chinook": 1,
+      "Hours": 5,
+      "Notes": "Early morning session. SO fun. One Chinook, one giant Coho."
+    },
+    {
+      "Date": "2025-01-06 00:00:00",
+      "Fish": 1,
+      "Pink": null,
+      "Coho": 1,
+      "Chinook": null,
+      "Hours": 5,
+      "Notes": "Apple cove with Dad. At least a dozen shakers, and one good medium Coho"
+    },
+    {
+      "Date": "2025-10-07 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": 0,
+      "Chinook": null,
+      "Hours": 8.5,
+      "Notes": "Skunked! Moonlight trip solo, not even one bite. Later with dad, lots more shakers. Dropped dad off in Edmonds"
+    },
+    {
+      "Date": "2025-10-11 00:00:00",
+      "Fish": 2,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": 2,
+      "Hours": 5,
+      "Notes": "With Brent at Desert Aire. Tons of fun, learned a lot about river guide fishing in the Columbia"
+    },
+    {
+      "Date": "2025-10-12 00:00:00",
+      "Fish": 3,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": 3,
+      "Hours": 10,
+      "Notes": "Had to hand off a 20 pound fish to Tom, so I'm counting it :-)"
+    },
+    {
+      "Date": "2025-10-17 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 7,
+      "Notes": "Beautiful sunny day. No luck at Oil docks or over at Apple Cove"
+    },
+    {
+      "Date": "2025-10-18 00:00:00",
+      "Fish": 0,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 6,
+      "Notes": "With Josh. Pretty spicy out there, and a bunch of Trawlers still. Two Jack's, and one big hit, but no keepers."
+    },
+    {
+      "Date": "2025-11-01 00:00:00",
+      "Fish": 1,
+      "Pink": null,
+      "Coho": null,
+      "Chinook": null,
+      "Hours": 3,
+      "Notes": "With Emma - final day of the season. Big winds and whitecaps on a calming day, but borderline sketchy. Emma caught a Chum"
+    }
+  ],
+  "totals": {
+    "Date": "Totals",
+    "Fish": 37,
+    "Pink": 19,
+    "Coho": 9,
+    "Chinook": 6,
+    "Hours": 170,
+    "Notes": null
+  }
+}

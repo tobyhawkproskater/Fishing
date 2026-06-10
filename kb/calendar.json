@@ -1,0 +1,134 @@
+{
+  "headers": [
+    "Month",
+    "MA9",
+    "MA10",
+    "Skykomish",
+    "Snohomish",
+    "Snoqualmie",
+    "Lake Sammamish",
+    "Notes"
+  ],
+  "rows": [
+    {
+      "Month": "January",
+      "MA9": "Blackmouth peak",
+      "MA10": "Blackmouth",
+      "Skykomish": "Winter steelhead peak",
+      "Snohomish": "Winter steelhead",
+      "Snoqualmie": "Winter steelhead",
+      "Lake Sammamish": "Slow",
+      "Notes": "Prime winter steelhead month; MA9 blackmouth strong."
+    },
+    {
+      "Month": "February",
+      "MA9": "Blackmouth strong",
+      "MA10": "Blackmouth",
+      "Skykomish": "Winter steelhead",
+      "Snohomish": "Winter steelhead",
+      "Snoqualmie": "Winter steelhead",
+      "Lake Sammamish": "Slow improving",
+      "Notes": "Flows stabilize; last strong blackmouth month."
+    },
+    {
+      "Month": "March",
+      "MA9": "Blackmouth tapering",
+      "MA10": "Blackmouth tapering",
+      "Skykomish": "Late winter steelhead",
+      "Snohomish": "Late winter steelhead",
+      "Snoqualmie": "Late winter steelhead",
+      "Lake Sammamish": "Trout waking up",
+      "Notes": "Transition month; Sammamish cutthroat start moving."
+    },
+    {
+      "Month": "April",
+      "MA9": "Minimal salt",
+      "MA10": "Resident Chinook",
+      "Skykomish": "Resident trout",
+      "Snohomish": "Resident trout",
+      "Snoqualmie": "Resident trout",
+      "Lake Sammamish": "Cutthroat excellent",
+      "Notes": "Spring trout fishing turns on."
+    },
+    {
+      "Month": "May",
+      "MA9": "Sea-run cutthroat",
+      "MA10": "Sea-run cutthroat",
+      "Skykomish": "Summer steelhead begin",
+      "Snohomish": "Resident trout",
+      "Snoqualmie": "Resident trout",
+      "Lake Sammamish": "Cutthroat peak",
+      "Notes": "Early SRC window; Sky summer-runs show."
+    },
+    {
+      "Month": "June",
+      "MA9": "Sea-run cutthroat",
+      "MA10": "Sea-run cutthroat",
+      "Skykomish": "Summer steelhead",
+      "Snohomish": "Summer steelhead",
+      "Snoqualmie": "Resident trout",
+      "Lake Sammamish": "Cutthroat + kokanee",
+      "Notes": "Consistent action across systems."
+    },
+    {
+      "Month": "July",
+      "MA9": "Summer Chinook begins",
+      "MA10": "Chinook opens late",
+      "Skykomish": "Summer steelhead peak",
+      "Snohomish": "Summer steelhead",
+      "Snoqualmie": "Resident trout",
+      "Lake Sammamish": "Kokanee + cutthroat",
+      "Notes": "MA9 Chinook opener; Skykomish steelhead prime."
+    },
+    {
+      "Month": "August",
+      "MA9": "Chinook peak",
+      "MA10": "Chinook moderate",
+      "Skykomish": "Steelhead",
+      "Snohomish": "Steelhead",
+      "Snoqualmie": "Resident trout",
+      "Lake Sammamish": "Kokanee peak",
+      "Notes": "Coho begin in salt; hottest Chinook month."
+    },
+    {
+      "Month": "September",
+      "MA9": "Coho peak",
+      "MA10": "Coho peak",
+      "Skykomish": "Coho + fall Chinook",
+      "Snohomish": "Coho + pinks (odd yrs)",
+      "Snoqualmie": "Coho (Tokul)",
+      "Lake Sammamish": "Cutthroat + kokanee",
+      "Notes": "One of the best all-around months."
+    },
+    {
+      "Month": "October",
+      "MA9": "Coho tapering",
+      "MA10": "Coho tapering",
+      "Skykomish": "Coho peak",
+      "Snohomish": "Coho peak",
+      "Snoqualmie": "Coho peak",
+      "Lake Sammamish": "Cutthroat excellent",
+      "Notes": "Peak river coho; SRC still strong."
+    },
+    {
+      "Month": "November",
+      "MA9": "Chum possible",
+      "MA10": "Chum possible",
+      "Skykomish": "Chum",
+      "Snohomish": "Chum peak",
+      "Snoqualmie": "Coho late",
+      "Lake Sammamish": "Cutthroat slowing",
+      "Notes": "Big Snohomish chum month."
+    },
+    {
+      "Month": "December",
+      "MA9": "Blackmouth begins",
+      "MA10": "Blackmouth begins",
+      "Skykomish": "Early winter steelhead",
+      "Snohomish": "Early winter steelhead",
+      "Snoqualmie": "Early winter steelhead",
+      "Lake Sammamish": "Slow",
+      "Notes": "Winter season resets; blackmouth returns."
+    }
+  ]
+}

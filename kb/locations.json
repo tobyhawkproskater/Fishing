@@ -1,0 +1,18 @@
+{
+  "places": [
+    {
+      "name": "Beach Cabin",
+      "address": "Clinton, WA (Whidbey Island)"
+    },
+    {
+      "name": "Primary Residence",
+      "address": "Redmond, WA"
+    }
+  ],
+  "boat": {
+    "year": 2006,
+    "make": "Boston Whaler",
+    "model": "160 Dauntless",
+    "name": "the Barnacle"
+  }
+}
