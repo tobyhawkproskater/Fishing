@@ -565,8 +565,8 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         # GREEN overlay: contiguous spans of "ideal" hours get the tide curve
         # repainted Fluent green and given a soft green fill beneath it.
         green_hours = {c["hour"] for c in cells if c["category"] == CAT_GREEN}
+        spans: list[tuple[float, float]] = []
         if green_hours:
-            spans: list[tuple[float, float]] = []
             sorted_h = sorted(green_hours)
             span_lo = sorted_h[0] - 0.5
             span_hi = sorted_h[0] + 0.5
