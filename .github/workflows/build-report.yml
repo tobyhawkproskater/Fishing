@@ -2,9 +2,10 @@ name: Build fishing report
 
 on:
   schedule:
-    # Every hour, on the hour, UTC. GitHub may delay scheduled runs by a few
-    # minutes when traffic is high; that is normal.
-    - cron: "0 * * * *"
+    # Off-peak minute (17) is more reliable than :00. GitHub queues scheduled
+    # workflows behind on-demand jobs and frequently drops runs scheduled for
+    # the top of the hour. Even so, expect occasional delays/skips.
+    - cron: "17 * * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
