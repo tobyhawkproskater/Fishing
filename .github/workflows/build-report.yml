@@ -42,16 +42,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
-      - name: Build MA9 report into docs/
+      - name: Build reports into docs/
         run: |
           mkdir -p docs
-          python -m fishing.html_report_ma9 docs/index.html
+          python -m fishing.html_report_ma9        docs/index.html
+          python -m fishing.html_report_ma9_mobile docs/mobile.html
 
       - name: Commit and push if changed
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
+          git add docs/index.html docs/mobile.html
           if git diff --staged --quiet; then
             echo "No changes."
           else
