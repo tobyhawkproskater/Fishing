@@ -91,9 +91,11 @@ def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
 
     Large exchanges (~10 ft swings) drive strong currents and a sharp slack
     feeding window. Small exchanges (a couple of feet) barely flush water and
-    fish often don't switch on. Range = average of |this - prev| and
-    |next - this| in feet. Falls back to a single neighbor when ev is at the
-    edge of the available event list.
+    fish often don't switch on. Range = MIN of |this - prev| and |next - this|
+    in feet -- the slack is only as fishable as the smaller of the two swings
+    it sits between (a 13 ft drop in followed by a 4 ft rise out doesn't make
+    the post-slack hours fishable). Falls back to a single neighbor when ev
+    is at the edge of the available event list.
     """
     if not ev:
         return 1.0
@@ -123,7 +125,7 @@ def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
         deltas.append(abs(next_h - ev_h))
     if not deltas:
         return 1.0
-    rng = sum(deltas) / len(deltas)
+    rng = min(deltas)
     if rng >= 9.0:
         return 1.0
     if rng >= 6.0:
