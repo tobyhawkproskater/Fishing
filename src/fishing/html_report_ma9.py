@@ -496,28 +496,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         f"fill='var(--ms-text)'>{day_date.strftime('%A %b %#d')}</text>"
     )
 
-    # Score strip on a fixed shelf above the chart (continuous fishability).
-    strip_y = 32
-    strip_h = 11
-    if cells:
-        per = IW / (HOUR_END - HOUR_START + 1)
-        for c in cells:
-            bg, fg = _score_cell_class(c["score"])
-            cx = x_of(c["hour"])
-            parts.append(
-                f"<rect x='{cx:.1f}' y='{strip_y}' width='{per:.1f}' height='{strip_h}' "
-                f"fill='{bg}' rx='2'/>"
-            )
-            if c["score"] >= 0.45:
-                label = f"{c['score']:.2f}".lstrip("0") or "0"
-                parts.append(
-                    f"<text x='{cx + per/2:.1f}' y='{strip_y + 8.5}' text-anchor='middle' "
-                    f"font-size='8' font-weight='700' fill='{fg}'>{label}</text>"
-                )
-        parts.append(
-            f"<text x='{PL - 6}' y='{strip_y + 8.5}' text-anchor='end' font-size='9' "
-            f"fill='var(--ms-text-secondary)'>score</text>"
-        )
+    # (Score is now shown directly via the tide curve color, no separate strip.)
 
     # Non-daylight shading (before HOUR_START, after HOUR_END+1) + 30-min gridlines.
     # Drawn before the tide curve so everything else paints on top.
@@ -566,17 +545,31 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         parts.append(f"<path d='{line}' fill='none' stroke='#005A9E' stroke-width='2'/>")
 
         # Tier overlay: tide curve repainted with the heatmap palette so the
-        # chart's colored sections directly correspond to score tiers. Only
-        # Prime and Good are drawn; Marginal/Poor/Terrible leave the default
-        # blue tide curve in place.
-        TIER_COLOR = {"prime": "#0078D4", "good": "#107C10"}
+        # chart's colored sections directly correspond to score tiers \u2014 the
+        # whole tide curve becomes the score legend.
+        TIER_FILL = {
+            "prime":    ("#0078D4", 0.30),
+            "good":     ("#107C10", 0.20),
+            "marginal": ("#FFF4CE", 0.85),
+            "poor":     ("#FED9B7", 0.85),
+        }
+        TIER_STROKE = {
+            "prime":    "#0078D4",
+            "good":     "#107C10",
+            "marginal": "#B07900",
+            "poor":     "#D04A0A",
+        }
 
         def _tier(score: float) -> Optional[str]:
             if score >= 0.85:
                 return "prime"
             if score >= 0.45:
                 return "good"
-            return None
+            if score >= 0.25:
+                return "marginal"
+            if score > 0.0:
+                return "poor"
+            return None  # Terrible \u2014 leave default tide color
 
         cells_sorted = sorted(cells, key=lambda c: c["hour"])
         tier_spans: list[tuple[str, float, float]] = []
@@ -596,26 +589,30 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
             tier_spans.append((cur_tier, cur_lo, prev_h + 0.5))
 
         for tier, lo, hi in tier_spans:
-            color = TIER_COLOR[tier]
             seg = [(hr, v) for hr, v in tide_pts if lo <= hr <= hi]
             if len(seg) < 2:
                 continue
+            fill_color, fill_op = TIER_FILL[tier]
+            stroke_color = TIER_STROKE[tier]
+            sw = 3 if tier in ("prime", "good") else 2.2
             fill = "M " + f"{x_of(seg[0][0]):.1f},{PT + IH:.1f} "
             fill += " ".join(f"L {x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg)
             fill += f" L {x_of(seg[-1][0]):.1f},{PT + IH:.1f} Z"
             parts.append(
-                f"<path d='{fill}' fill='{color}' opacity='0.18' stroke='none'/>"
+                f"<path d='{fill}' fill='{fill_color}' opacity='{fill_op:.2f}' stroke='none'/>"
             )
             stroke = "M " + " L ".join(
                 f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg
             )
             parts.append(
-                f"<path d='{stroke}' fill='none' stroke='{color}' "
-                f"stroke-width='3' stroke-linecap='round'/>"
+                f"<path d='{stroke}' fill='none' stroke='{stroke_color}' "
+                f"stroke-width='{sw}' stroke-linecap='round'/>"
             )
 
-        # Slack-moment marker spans = any Prime or Good span on the curve.
-        spans: list[tuple[float, float]] = [(lo, hi) for _, lo, hi in tier_spans]
+        # Slack-moment marker spans = Prime or Good spans only.
+        spans: list[tuple[float, float]] = [
+            (lo, hi) for tier, lo, hi in tier_spans if tier in ("prime", "good")
+        ]
 
         # BEST-MOMENT marker: any predicted H/L on this day that falls inside a
         # GREEN span is the literal peak of the fishability score. Mark the exact
@@ -836,10 +833,7 @@ def _render_daily_charts(data: dict) -> str:
         "<span><span class='line' style='border-color:#5C2D91;border-top-style:dotted;border-top-width:3px'></span>Air temp (\u00b0F)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
         "background:#0078D4;vertical-align:middle;margin-right:6px'></span>"
-        "Tide curve in <b>blue</b> = Prime hours (score \u22650.85)</span>"
-        "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
-        "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
-        "Tide curve in <b>green</b> = Good hours (score \u22650.45)</span>"
+        "Tide curve color = score tier (Prime/Good/Marginal/Poor)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
         "border-radius:3px;background:#107C10;color:#fff;text-align:center;font-size:10px;"
         "line-height:14px;vertical-align:middle;margin-right:6px'>\u2605</span>"
@@ -954,9 +948,9 @@ def build_html(start: Optional[dt.date] = None) -> str:
         "</section>"
         "<footer>Scoring: tide_score (1.0 at slack \u2192 0 at \u00b160 min) "
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
-        "\u00d7 precip_score. Tide curve is overlaid in <b>blue</b> for Prime hours "
-        "(score \u22650.85) and <b>green</b> for Good hours (\u22650.45) \u2014 same palette "
-        "as the heatmap. Daylight only (5 AM \u2013 9 PM PT). "
+        "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
+        "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
+        "plain blue = Terrible. Daylight only (5 AM \u2013 9 PM PT). "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"

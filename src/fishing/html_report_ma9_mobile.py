@@ -61,28 +61,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         f"fill='var(--ms-text)'>{day_date.strftime('%A %b %#d')}</text>"
     )
 
-    # Score strip on a fixed shelf above the chart
-    strip_y = 36
-    strip_h = 14
-    if cells:
-        per = IW / (HOUR_END - HOUR_START + 1)
-        for c in cells:
-            bg, fg = _score_cell_class(c["score"])
-            cx = x_of(c["hour"])
-            parts.append(
-                f"<rect x='{cx:.1f}' y='{strip_y}' width='{per:.1f}' height='{strip_h}' "
-                f"fill='{bg}' rx='2'/>"
-            )
-            if c["score"] >= 0.45:
-                label = f"{c['score']:.2f}".lstrip("0") or "0"
-                parts.append(
-                    f"<text x='{cx + per/2:.1f}' y='{strip_y + 11}' text-anchor='middle' "
-                    f"font-size='10' font-weight='700' fill='{fg}'>{label}</text>"
-                )
-        parts.append(
-            f"<text x='{PL - 4}' y='{strip_y + 11}' text-anchor='end' font-size='11' "
-            f"fill='var(--ms-text-secondary)'>score</text>"
-        )
+    # (Score is shown directly via the tide curve color, no separate strip.)
 
     # Non-daylight shading + hourly vertical gridlines (no half-hours on mobile;
     # too noisy at this width).
@@ -121,14 +100,29 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         line = "M " + " L ".join(f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in tide_pts)
         parts.append(f"<path d='{line}' fill='none' stroke='#005A9E' stroke-width='2.5'/>")
 
-        # Tier overlay (Prime/Good) matching the heatmap palette.
-        TIER_COLOR = {"prime": "#0078D4", "good": "#107C10"}
+        # Tier overlay across the full heatmap palette (Prime/Good/Marginal/Poor).
+        TIER_FILL = {
+            "prime":    ("#0078D4", 0.30),
+            "good":     ("#107C10", 0.20),
+            "marginal": ("#FFF4CE", 0.85),
+            "poor":     ("#FED9B7", 0.85),
+        }
+        TIER_STROKE = {
+            "prime":    "#0078D4",
+            "good":     "#107C10",
+            "marginal": "#B07900",
+            "poor":     "#D04A0A",
+        }
 
         def _tier(score: float):
             if score >= 0.85:
                 return "prime"
             if score >= 0.45:
                 return "good"
+            if score >= 0.25:
+                return "marginal"
+            if score > 0.0:
+                return "poor"
             return None
 
         cells_sorted = sorted(cells, key=lambda c: c["hour"])
@@ -149,25 +143,27 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             tier_spans.append((cur_tier, cur_lo, prev_h + 0.5))
 
         for tier, lo, hi in tier_spans:
-            color = TIER_COLOR[tier]
             seg = [(hr, v) for hr, v in tide_pts if lo <= hr <= hi]
             if len(seg) < 2:
                 continue
+            fill_color, fill_op = TIER_FILL[tier]
+            stroke_color = TIER_STROKE[tier]
+            sw = 4 if tier in ("prime", "good") else 2.8
             fill = "M " + f"{x_of(seg[0][0]):.1f},{PT + IH:.1f} "
             fill += " ".join(f"L {x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg)
             fill += f" L {x_of(seg[-1][0]):.1f},{PT + IH:.1f} Z"
             parts.append(
-                f"<path d='{fill}' fill='{color}' opacity='0.18' stroke='none'/>"
+                f"<path d='{fill}' fill='{fill_color}' opacity='{fill_op:.2f}' stroke='none'/>"
             )
             stroke = "M " + " L ".join(
                 f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg
             )
             parts.append(
-                f"<path d='{stroke}' fill='none' stroke='{color}' "
-                f"stroke-width='4' stroke-linecap='round'/>"
+                f"<path d='{stroke}' fill='none' stroke='{stroke_color}' "
+                f"stroke-width='{sw}' stroke-linecap='round'/>"
             )
 
-        spans = [(lo, hi) for _, lo, hi in tier_spans]
+        spans = [(lo, hi) for tier, lo, hi in tier_spans if tier in ("prime", "good")]
 
         # Best-moment markers (and PRIME upgrade)
         best_moments: list[tuple[dt.datetime, float, str]] = []
