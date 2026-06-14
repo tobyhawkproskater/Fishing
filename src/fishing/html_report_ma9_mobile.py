@@ -121,36 +121,53 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         line = "M " + " L ".join(f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in tide_pts)
         parts.append(f"<path d='{line}' fill='none' stroke='#005A9E' stroke-width='2.5'/>")
 
-        # GREEN spans of the tide curve
-        green_hours = {c["hour"] for c in cells if c["category"] == CAT_GREEN}
-        if green_hours:
-            sorted_h = sorted(green_hours)
-            span_lo, span_hi = sorted_h[0] - 0.5, sorted_h[0] + 0.5
-            for h in sorted_h[1:]:
-                if h - 0.5 <= span_hi + 1e-6:
-                    span_hi = h + 0.5
-                else:
-                    spans.append((span_lo, span_hi))
-                    span_lo, span_hi = h - 0.5, h + 0.5
-            spans.append((span_lo, span_hi))
+        # Tier overlay (Prime/Good) matching the heatmap palette.
+        TIER_COLOR = {"prime": "#0078D4", "good": "#107C10"}
 
-            for lo, hi in spans:
-                seg = [(hr, v) for hr, v in tide_pts if lo <= hr <= hi]
-                if len(seg) < 2:
-                    continue
-                fill = "M " + f"{x_of(seg[0][0]):.1f},{PT + IH:.1f} "
-                fill += " ".join(f"L {x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg)
-                fill += f" L {x_of(seg[-1][0]):.1f},{PT + IH:.1f} Z"
-                parts.append(
-                    f"<path d='{fill}' fill='#107C10' opacity='0.18' stroke='none'/>"
-                )
-                stroke = "M " + " L ".join(
-                    f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg
-                )
-                parts.append(
-                    f"<path d='{stroke}' fill='none' stroke='#107C10' "
-                    f"stroke-width='4' stroke-linecap='round'/>"
-                )
+        def _tier(score: float):
+            if score >= 0.85:
+                return "prime"
+            if score >= 0.45:
+                return "good"
+            return None
+
+        cells_sorted = sorted(cells, key=lambda c: c["hour"])
+        tier_spans: list[tuple[str, float, float]] = []
+        cur_tier = None
+        cur_lo = None
+        prev_h = None
+        for c in cells_sorted:
+            t = _tier(c["score"])
+            h = c["hour"]
+            if t != cur_tier:
+                if cur_tier and prev_h is not None and cur_lo is not None:
+                    tier_spans.append((cur_tier, cur_lo, prev_h + 0.5))
+                cur_tier = t
+                cur_lo = h - 0.5
+            prev_h = h
+        if cur_tier and prev_h is not None and cur_lo is not None:
+            tier_spans.append((cur_tier, cur_lo, prev_h + 0.5))
+
+        for tier, lo, hi in tier_spans:
+            color = TIER_COLOR[tier]
+            seg = [(hr, v) for hr, v in tide_pts if lo <= hr <= hi]
+            if len(seg) < 2:
+                continue
+            fill = "M " + f"{x_of(seg[0][0]):.1f},{PT + IH:.1f} "
+            fill += " ".join(f"L {x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg)
+            fill += f" L {x_of(seg[-1][0]):.1f},{PT + IH:.1f} Z"
+            parts.append(
+                f"<path d='{fill}' fill='{color}' opacity='0.18' stroke='none'/>"
+            )
+            stroke = "M " + " L ".join(
+                f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in seg
+            )
+            parts.append(
+                f"<path d='{stroke}' fill='none' stroke='{color}' "
+                f"stroke-width='4' stroke-linecap='round'/>"
+            )
+
+        spans = [(lo, hi) for _, lo, hi in tier_spans]
 
         # Best-moment markers (and PRIME upgrade)
         best_moments: list[tuple[dt.datetime, float, str]] = []
@@ -189,7 +206,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"stroke='#107C10' stroke-width='1.8' stroke-dasharray='6,3' opacity='0.9'/>"
                 )
                 badge_fill, badge_text = "#107C10", "#FFFFFF"
-                label = f"\u2605 GOOD {_fmt_clock(t)}"
+                label = f"\u2605 slack {_fmt_clock(t)}"
                 badge_h, font_sz = 19, 12
 
             badge_y = 54
