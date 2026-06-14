@@ -78,27 +78,38 @@ def _nearest_tide(hour_iso: str, tide_events: list[dict]) -> tuple[Optional[floa
     return best_dt, best_ev
 
 
-def _slack_half_window(ev: Optional[dict], tide_events: list[dict]) -> float:
-    """Return the fishable half-window (minutes) around a slack event.
+def _window_for_swing(rng_ft: float) -> float:
+    """Map swing magnitude (ft) to the half-window (min) for tide_score decay."""
+    if rng_ft < 3.0:
+        return 360.0
+    if rng_ft < 6.0:
+        return 180.0
+    if rng_ft < 9.0:
+        return 90.0
+    return 45.0
 
-    Admiralty Inlet currents scale roughly with exchange size. A big spring
-    swing rips 3-5 kt and the fishable slack is brief; a neap-day micro-
-    exchange barely moves water and the whole interval between slacks stays
-    soft. We size the linear tide_score decay by the smaller of the two
-    adjacent swings (the slack is only as gentle as its larger-swing side):
-        <3 ft  -> 360 min (essentially the full interval between slacks)
-        3-6 ft -> 180 min
-        6-9 ft ->  90 min
-        >=9 ft ->  45 min (honest about spring rip)
-    Falls back to 60 min if the event metadata can't be parsed.
+
+def _slack_half_windows(ev: Optional[dict], tide_events: list[dict]) -> tuple[float, float]:
+    """Return (before_window, after_window) in minutes around a slack event.
+
+    Each side is sized independently by ITS adjacent swing -- the incoming
+    swing (prev -> ev) sets how long *before* slack stays fishable, the
+    outgoing swing (ev -> next) sets how long *after* slack stays fishable.
+    This captures asymmetric tides: a 13 ft drop into slack followed by a
+    4 ft rise out gives a tight ±45 min before-window but a generous ±6 hr
+    after-window.
+
+    Thresholds (per side): <3 ft -> 360 min, 3-6 -> 180, 6-9 -> 90, >=9 -> 45.
+    Falls back to 60/60 if metadata can't be parsed, and mirrors a single
+    neighbor when ev is at the edge of the event list.
     """
     if not ev:
-        return 60.0
+        return 60.0, 60.0
     try:
         ev_t = dt.datetime.strptime(ev["t"], "%Y-%m-%d %H:%M")
         ev_h = float(ev["v"])
     except (KeyError, TypeError, ValueError):
-        return 60.0
+        return 60.0, 60.0
     parsed: list[tuple[dt.datetime, float]] = []
     for x in tide_events:
         try:
@@ -113,21 +124,15 @@ def _slack_half_window(ev: Optional[dict], tide_events: list[dict]) -> float:
         elif t > ev_t and next_h is None:
             next_h = h
             break
-    deltas: list[float] = []
-    if prev_h is not None:
-        deltas.append(abs(ev_h - prev_h))
-    if next_h is not None:
-        deltas.append(abs(next_h - ev_h))
-    if not deltas:
-        return 60.0
-    rng = min(deltas)
-    if rng < 3.0:
-        return 360.0
-    if rng < 6.0:
-        return 180.0
-    if rng < 9.0:
-        return 90.0
-    return 45.0
+    before = _window_for_swing(abs(ev_h - prev_h)) if prev_h is not None else None
+    after = _window_for_swing(abs(next_h - ev_h)) if next_h is not None else None
+    if before is None and after is None:
+        return 60.0, 60.0
+    if before is None:
+        before = after
+    if after is None:
+        after = before
+    return before, after
 
 
 def _tide_score(minutes_to_slack: Optional[float], half_window_min: float = 60.0) -> float:
@@ -228,7 +233,16 @@ def _assemble(start: dt.date) -> dict:
             precip = wx.get("precip_in")
 
             mins, t_ev = _nearest_tide(key, tide_events)
-            half_win = _slack_half_window(t_ev, tide_events)
+            before_win, after_win = _slack_half_windows(t_ev, tide_events)
+            # Pick the window belonging to the side of slack this hour is on.
+            half_win = before_win
+            if t_ev is not None and mins is not None:
+                try:
+                    ev_t = dt.datetime.strptime(t_ev["t"], "%Y-%m-%d %H:%M")
+                    hr_t = dt.datetime.fromisoformat(key)
+                    half_win = after_win if hr_t >= ev_t else before_win
+                except (KeyError, ValueError, TypeError):
+                    half_win = max(before_win, after_win)
             in_slack = mins is not None and mins <= half_win
             ts = _tide_score(mins, half_win)
             ws = _wind_score(gust)
@@ -1001,9 +1015,11 @@ def build_html(start: Optional[dt.date] = None) -> str:
         f"{_render_top_kpis(data)}"
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
-        "<footer>Scoring: tide_score (1.0 at slack, linear decay to 0; "
-        "the slack half-window scales with the smaller adjacent swing \u2014 "
-        "&lt;3 ft = \u00b16 hr, 3\u20136 = \u00b13 hr, 6\u20139 = \u00b190 min, \u22659 ft = \u00b145 min) "
+        "<footer>Scoring: tide_score (1.0 at slack, linear decay to 0; the "
+        "half-window is sized per side by the adjacent swing \u2014 a 13 ft "
+        "drop into slack gives a tight \u00b145 min before-window, a 4 ft rise "
+        "out gives a generous \u00b13 hr after-window. Thresholds: &lt;3 ft = 6 hr, "
+        "3\u20136 = 3 hr, 6\u20139 = 90 min, \u22659 ft = 45 min) "
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
         "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
         "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
