@@ -35,7 +35,7 @@ from typing import Optional
 from . import ROOT, kb
 from .distance import haversine_km
 from .stations import PLACES, WATERS
-from .weather import ndbc_latest, noaa_tides, nws_marine_forecast, open_meteo
+from .weather import ndbc_latest, noaa_tides, nws_marine_forecast, open_meteo, wind_blend
 from .html_report import (
     CSS, _deg_to_compass, _fmt, _h, _kind_tag, _render_buoy,
     _render_rules, _render_tides, _group_tides_by_day, _wind_cell_class,
@@ -147,7 +147,10 @@ def _fmt_iso_clock(iso: str, with_minutes: bool = True) -> str:
 
 def _assemble(start: dt.date) -> dict:
     w = WATERS[WATER_KEY]
-    om = open_meteo(w.lat, w.lon, hours=DAYS * 24)
+    om = wind_blend(w.lat, w.lon, hours=DAYS * 24)
+    if "error" in om or not om.get("hours"):
+        # Last-ditch fallback to single-source Open-Meteo if the blend failed.
+        om = open_meteo(w.lat, w.lon, hours=DAYS * 24)
     hours = {h["time"]: h for h in om.get("hours", [])}
 
     # Pad ±1 day so cosine tide interpolation has bracketing events at the edges.
@@ -216,6 +219,7 @@ def _assemble(start: dt.date) -> dict:
         "buoys": [ndbc_latest(b) for b in w.ndbc_buoys],
         "windows": all_windows,
         "open_meteo_error": om.get("error"),
+        "wind_sources": om.get("sources") or [om.get("source", "Open-Meteo")],
         "tides_error": tides.get("error"),
         "rules": kb.regulations("Marine Area 9"),
     }
@@ -932,7 +936,8 @@ def build_html(start: Optional[dt.date] = None) -> str:
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
         "\u00d7 precip_score. Tide curve is highlighted <b>GREEN</b> where slack \u00b11h "
         "and wind &lt;10 mph and gust &lt;20 mph. Daylight only (5 AM \u2013 9 PM PT). "
-        "Sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC \u00b7 Open-Meteo.</footer>"
+        f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
+        "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"
     )
 
