@@ -89,13 +89,14 @@ def _tide_score(minutes_to_slack: Optional[float]) -> float:
 def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
     """Scale slack importance by the size of the tidal exchange around `ev`.
 
-    Large exchanges (~10 ft swings) drive strong currents and a sharp slack
-    feeding window. Small exchanges (a couple of feet) barely flush water and
-    fish often don't switch on. Range = MIN of |this - prev| and |next - this|
-    in feet -- the slack is only as fishable as the smaller of the two swings
-    it sits between (a 13 ft drop in followed by a 4 ft rise out doesn't make
-    the post-slack hours fishable). Falls back to a single neighbor when ev
-    is at the edge of the available event list.
+    Admiralty Inlet runs hard -- a 10+ ft spring exchange produces 3-5 kt
+    currents that overpower most gear and stir up too much chop on the
+    surface. Smaller exchanges keep currents manageable through slack and
+    extend the fishable window. Range = MIN of |this - prev| and
+    |next - this| in feet, since the slack is only as gentle as the larger
+    of the two adjacent swings (a big drop in followed by a small rise out
+    still produces a hard pre-slack ebb). Falls back to a single neighbor
+    when ev is at the edge of the available event list.
     """
     if not ev:
         return 1.0
@@ -126,11 +127,11 @@ def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
     if not deltas:
         return 1.0
     rng = min(deltas)
-    if rng >= 9.0:
+    if rng < 3.0:
         return 1.0
-    if rng >= 6.0:
+    if rng < 6.0:
         return 0.9
-    if rng >= 3.0:
+    if rng < 9.0:
         return 0.7
     return 0.4
 
@@ -998,7 +999,8 @@ def build_html(start: Optional[dt.date] = None) -> str:
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
         "<footer>Scoring: tide_score (1.0 at slack \u2192 0 at \u00b160 min, "
-        "scaled 0.4\u20131.0 by exchange size: &lt;3 ft / 3\u20136 / 6\u20139 / \u22659 ft) "
+        "scaled 0.4\u20131.0 by exchange size \u2014 smaller is better in MA9: "
+        "&lt;3 ft = 1.0, 3\u20136 = 0.9, 6\u20139 = 0.7, \u22659 ft = 0.4) "
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
         "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
         "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
