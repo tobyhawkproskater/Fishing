@@ -649,7 +649,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 )
                 badge_fill = "#107C10"
                 badge_text = "#FFFFFF"
-                label = f"\u2605 best {_fmt_clock(t)}"
+                label = f"\u2605 GOOD {_fmt_clock(t)}"
                 badge_h = 15
                 font_sz = 10
 
@@ -823,7 +823,7 @@ def _render_daily_charts(data: dict) -> str:
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
         "border-radius:3px;background:#107C10;color:#fff;text-align:center;font-size:10px;"
         "line-height:14px;vertical-align:middle;margin-right:6px'>\u2605</span>"
-        "Best moment (exact slack time inside a GREEN span)</span>"
+        "<strong>GOOD</strong> &mdash; exact slack time inside a GREEN span</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
         "border-radius:3px;background:#FFB900;color:#3B2F00;text-align:center;font-size:11px;"
         "line-height:14px;font-weight:700;vertical-align:middle;margin-right:6px'>\u2605</span>"
