@@ -113,13 +113,13 @@ def _classify(in_slack: bool, wind_mph: Optional[float],
 
 
 def _score_cell_class(score: float) -> tuple[str, str]:
-    """Continuous score -> (background, foreground) for heatmap cells."""
-    if score >= 0.85: return ("#0078D4", "#FFFFFF")  # Ideal     - blue
-    if score >= 0.65: return ("#DEECF9", "#004578")  # Great     - light blue
+    """Continuous score -> (background, foreground) for heatmap cells.
+    Tiers: Prime / Good / Marginal / Poor / Terrible."""
+    if score >= 0.85: return ("#0078D4", "#FFFFFF")  # Prime     - blue
     if score >= 0.45: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
     if score >= 0.25: return ("#FFF4CE", "#5C4400")  # Marginal  - light yellow
     if score > 0.0:   return ("#FED9B7", "#8A2900")  # Poor      - light orange
-    return ("#F3F2F1", "#A19F9D")                    # Off/blown - neutral
+    return ("#F3F2F1", "#A19F9D")                    # Terrible  - neutral
 
 
 def _fmt_clock(t: dt.datetime, with_minutes: bool = True) -> str:
@@ -346,12 +346,11 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
     header = "<tr><th class='label'>Day</th>" + hour_headers + "</tr>"
     legend = (
         "<div class='legend'>"
-        "<span><span class='sw' style='background:#0078D4'></span>Ideal (\u22650.85)</span>"
-        "<span><span class='sw' style='background:#DEECF9'></span>Great</span>"
+        "<span><span class='sw' style='background:#0078D4'></span>Prime (\u22650.85)</span>"
         "<span><span class='sw' style='background:#DFF6DD'></span>Good</span>"
         "<span><span class='sw' style='background:#FFF4CE'></span>Marginal</span>"
         "<span><span class='sw' style='background:#FED9B7'></span>Poor</span>"
-        "<span><span class='sw' style='background:#F3F2F1'></span>Off/blown out</span>"
+        "<span><span class='sw' style='background:#F3F2F1'></span>Terrible</span>"
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
