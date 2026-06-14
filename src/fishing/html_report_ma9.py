@@ -78,33 +78,27 @@ def _nearest_tide(hour_iso: str, tide_events: list[dict]) -> tuple[Optional[floa
     return best_dt, best_ev
 
 
-def _tide_score(minutes_to_slack: Optional[float]) -> float:
-    if minutes_to_slack is None:
-        return 0.0
-    if minutes_to_slack >= 60.0:
-        return 0.0
-    return max(0.0, 1.0 - minutes_to_slack / 60.0)
+def _slack_half_window(ev: Optional[dict], tide_events: list[dict]) -> float:
+    """Return the fishable half-window (minutes) around a slack event.
 
-
-def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
-    """Scale slack importance by the size of the tidal exchange around `ev`.
-
-    Admiralty Inlet runs hard -- a 10+ ft spring exchange produces 3-5 kt
-    currents that overpower most gear and stir up too much chop on the
-    surface. Smaller exchanges keep currents manageable through slack and
-    extend the fishable window. Range = MIN of |this - prev| and
-    |next - this| in feet, since the slack is only as gentle as the larger
-    of the two adjacent swings (a big drop in followed by a small rise out
-    still produces a hard pre-slack ebb). Falls back to a single neighbor
-    when ev is at the edge of the available event list.
+    Admiralty Inlet currents scale roughly with exchange size. A big spring
+    swing rips 3-5 kt and the fishable slack is brief; a neap-day micro-
+    exchange barely moves water and the whole interval between slacks stays
+    soft. We size the linear tide_score decay by the smaller of the two
+    adjacent swings (the slack is only as gentle as its larger-swing side):
+        <3 ft  -> 360 min (essentially the full interval between slacks)
+        3-6 ft -> 180 min
+        6-9 ft ->  90 min
+        >=9 ft ->  45 min (honest about spring rip)
+    Falls back to 60 min if the event metadata can't be parsed.
     """
     if not ev:
-        return 1.0
+        return 60.0
     try:
         ev_t = dt.datetime.strptime(ev["t"], "%Y-%m-%d %H:%M")
         ev_h = float(ev["v"])
     except (KeyError, TypeError, ValueError):
-        return 1.0
+        return 60.0
     parsed: list[tuple[dt.datetime, float]] = []
     for x in tide_events:
         try:
@@ -125,15 +119,24 @@ def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
     if next_h is not None:
         deltas.append(abs(next_h - ev_h))
     if not deltas:
-        return 1.0
+        return 60.0
     rng = min(deltas)
     if rng < 3.0:
-        return 1.0
+        return 360.0
     if rng < 6.0:
-        return 0.9
+        return 180.0
     if rng < 9.0:
-        return 0.7
-    return 0.4
+        return 90.0
+    return 45.0
+
+
+def _tide_score(minutes_to_slack: Optional[float], half_window_min: float = 60.0) -> float:
+    """Linear decay from 1.0 at slack to 0.0 at +/- `half_window_min` minutes."""
+    if minutes_to_slack is None or half_window_min <= 0:
+        return 0.0
+    if minutes_to_slack >= half_window_min:
+        return 0.0
+    return max(0.0, 1.0 - minutes_to_slack / half_window_min)
 
 
 def _wind_score(gust_mph: Optional[float]) -> float:
@@ -225,9 +228,9 @@ def _assemble(start: dt.date) -> dict:
             precip = wx.get("precip_in")
 
             mins, t_ev = _nearest_tide(key, tide_events)
-            in_slack = mins is not None and mins <= 60.0
-            ex_factor = _exchange_factor(t_ev, tide_events)
-            ts = _tide_score(mins) * ex_factor
+            half_win = _slack_half_window(t_ev, tide_events)
+            in_slack = mins is not None and mins <= half_win
+            ts = _tide_score(mins, half_win)
             ws = _wind_score(gust)
             ps = _precip_score(precip)
             score = ts * ws * ps
@@ -236,7 +239,7 @@ def _assemble(start: dt.date) -> dict:
             cell = {
                 "time": key, "hour": hr, "score": score,
                 "tide_score": ts, "wind_score": ws, "precip_score": ps,
-                "exchange_factor": ex_factor,
+                "slack_window_min": half_win,
                 "category": category,
                 "in_slack": in_slack, "minutes_to_slack": mins,
                 "nearest_tide": t_ev,
@@ -998,9 +1001,9 @@ def build_html(start: Optional[dt.date] = None) -> str:
         f"{_render_top_kpis(data)}"
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
-        "<footer>Scoring: tide_score (1.0 at slack \u2192 0 at \u00b160 min, "
-        "scaled 0.4\u20131.0 by exchange size \u2014 smaller is better in MA9: "
-        "&lt;3 ft = 1.0, 3\u20136 = 0.9, 6\u20139 = 0.7, \u22659 ft = 0.4) "
+        "<footer>Scoring: tide_score (1.0 at slack, linear decay to 0; "
+        "the slack half-window scales with the smaller adjacent swing \u2014 "
+        "&lt;3 ft = \u00b16 hr, 3\u20136 = \u00b13 hr, 6\u20139 = \u00b190 min, \u22659 ft = \u00b145 min) "
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
         "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
         "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
