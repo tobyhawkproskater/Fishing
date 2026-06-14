@@ -86,6 +86,53 @@ def _tide_score(minutes_to_slack: Optional[float]) -> float:
     return max(0.0, 1.0 - minutes_to_slack / 60.0)
 
 
+def _exchange_factor(ev: Optional[dict], tide_events: list[dict]) -> float:
+    """Scale slack importance by the size of the tidal exchange around `ev`.
+
+    Large exchanges (~10 ft swings) drive strong currents and a sharp slack
+    feeding window. Small exchanges (a couple of feet) barely flush water and
+    fish often don't switch on. Range = average of |this - prev| and
+    |next - this| in feet. Falls back to a single neighbor when ev is at the
+    edge of the available event list.
+    """
+    if not ev:
+        return 1.0
+    try:
+        ev_t = dt.datetime.strptime(ev["t"], "%Y-%m-%d %H:%M")
+        ev_h = float(ev["v"])
+    except (KeyError, TypeError, ValueError):
+        return 1.0
+    parsed: list[tuple[dt.datetime, float]] = []
+    for x in tide_events:
+        try:
+            parsed.append((dt.datetime.strptime(x["t"], "%Y-%m-%d %H:%M"), float(x["v"])))
+        except (KeyError, TypeError, ValueError):
+            continue
+    parsed.sort()
+    prev_h = next_h = None
+    for t, h in parsed:
+        if t < ev_t:
+            prev_h = h
+        elif t > ev_t and next_h is None:
+            next_h = h
+            break
+    deltas: list[float] = []
+    if prev_h is not None:
+        deltas.append(abs(ev_h - prev_h))
+    if next_h is not None:
+        deltas.append(abs(next_h - ev_h))
+    if not deltas:
+        return 1.0
+    rng = sum(deltas) / len(deltas)
+    if rng >= 9.0:
+        return 1.0
+    if rng >= 6.0:
+        return 0.9
+    if rng >= 3.0:
+        return 0.7
+    return 0.4
+
+
 def _wind_score(gust_mph: Optional[float]) -> float:
     g = gust_mph if gust_mph is not None else 0.0
     if g < 12: return 1.0
@@ -176,7 +223,8 @@ def _assemble(start: dt.date) -> dict:
 
             mins, t_ev = _nearest_tide(key, tide_events)
             in_slack = mins is not None and mins <= 60.0
-            ts = _tide_score(mins)
+            ex_factor = _exchange_factor(t_ev, tide_events)
+            ts = _tide_score(mins) * ex_factor
             ws = _wind_score(gust)
             ps = _precip_score(precip)
             score = ts * ws * ps
@@ -185,6 +233,7 @@ def _assemble(start: dt.date) -> dict:
             cell = {
                 "time": key, "hour": hr, "score": score,
                 "tide_score": ts, "wind_score": ws, "precip_score": ps,
+                "exchange_factor": ex_factor,
                 "category": category,
                 "in_slack": in_slack, "minutes_to_slack": mins,
                 "nearest_tide": t_ev,
@@ -946,7 +995,8 @@ def build_html(start: Optional[dt.date] = None) -> str:
         f"{_render_top_kpis(data)}"
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
-        "<footer>Scoring: tide_score (1.0 at slack \u2192 0 at \u00b160 min) "
+        "<footer>Scoring: tide_score (1.0 at slack \u2192 0 at \u00b160 min, "
+        "scaled 0.4\u20131.0 by exchange size: &lt;3 ft / 3\u20136 / 6\u20139 / \u22659 ft) "
         "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
         "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
         "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
