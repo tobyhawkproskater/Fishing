@@ -14,10 +14,10 @@ windows on the per-day tide wave):
     RED     slack +/- 1h, but wind > 15 mph OR gust >= 20 mph
     OFF     more than 1h from nearest predicted H or L tide
 
-Slack is approximated by the nearest predicted high/low at Glendale
-(NOAA CO-OPS 9447973), on the south end of Whidbey Island. The fishable
-half-window around each slack is sized per side by the adjacent tide swing
-(see `_slack_half_windows`).
+Slack is approximated by the nearest predicted high/low at Hansville
+(NOAA CO-OPS 9445526), at the north tip of Kitsap Peninsula at the mouth
+of Admiralty Inlet. The fishable half-window around each slack is sized
+per side by the adjacent tide swing (see `_slack_half_windows`).
 
 Run:
     python -m fishing.html_report_ma9
@@ -931,7 +931,7 @@ def build_html(start: Optional[dt.date] = None) -> str:
     data = _assemble(start)
     w = data["water"]
 
-    sub = f"{_kind_tag(w.kind)} {w.lat:.3f}, {w.lon:.3f} · tide station Glendale (9447973)"
+    sub = f"{_kind_tag(w.kind)} {w.lat:.3f}, {w.lon:.3f} · tide station Hansville (9445526)"
 
     # Cards
     cards = []

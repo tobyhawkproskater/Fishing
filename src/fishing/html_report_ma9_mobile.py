@@ -590,7 +590,7 @@ def build_html(start: Optional[dt.date] = None) -> str:
         + "".join(day_cards)
         + "</section>"
         "<footer>"
-        f"<div>{_h(w.name)} \u00b7 tide station Glendale (9447973)</div>"
+        f"<div>{_h(w.name)} \u00b7 tide station Hansville (9445526)</div>"
         "<div>Score = tide \u00d7 wind \u00d7 precip. Tide half-window scales with the "
         "adjacent swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). "
         "Wind tiers by gust: &lt;12 / &lt;18 / &lt;25 / \u226525 mph.</div>"

@@ -45,7 +45,7 @@ WATERS: dict[str, Water] = {
         kind="marine",
         lat=47.97, lon=-122.65,
         nws_zone="PZZ133",
-        tide_station="9447973",        # Glendale, Whidbey Island
+        tide_station="9445526",        # Hansville (north Kitsap, mouth of Admiralty Inlet)
         ndbc_buoys=("BUSW1", "SISW1"), # Bush Point, Smith Island
         aliases=("marine area 9", "admiralty", "admiralty inlet"),
     ),
