@@ -1,18 +1,26 @@
 """MA9-only 7-day report with a tide x weather fishability heatmap.
 
 Scoring model (per daylight hour, 5 AM - 9 PM PT):
-    score = tide_score * wind_score * precip_score
+    score = wind_score * precip_score * (0.4 + 0.6 * tide_score)
 where
-    tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at >=60 min away
+    tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at the edge of
+                   the per-side half-window (sized by the adjacent swing).
     wind_score   = 1.0 / 0.7 / 0.3 / 0.0 for gusts <12 / <18 / <25 / >=25 mph
     precip_score = 1.0 if <0.05 in/h, else 0.5
 
+Tide is a soft modifier (0.4x .. 1.0x), not a hard multiplier: a glass-calm
+mid-cycle hour earns ~0.4 (Marginal) so big-swing days don't read as
+uniformly Good. Slack at the same conditions earns 1.0 (Prime).
+
 In addition, each hour gets a *category* (used to highlight ideal slack
 windows on the per-day tide wave):
-    GREEN   slack +/- 1h, wind < 10 mph AND gust < 20 mph
-    YELLOW  slack +/- 1h, wind 10-15 mph (gust < 20 mph)
-    RED     slack +/- 1h, but wind > 15 mph OR gust >= 20 mph
-    OFF     more than 1h from nearest predicted H or L tide
+    GREEN   slack window with wind < 10 mph AND gust < 20 mph
+    YELLOW  slack window, wind 10-15 mph (gust < 20 mph)
+    RED     slack window, but wind > 15 mph OR gust >= 20 mph
+    OFF     outside the slack window
+
+A separate per-day wind badge (GLASS / BREEZY / BLOWN) summarizes the
+daylight wind character so glass-calm days are obvious at a glance.
 
 Slack is approximated by the nearest predicted high/low at Hansville
 (NOAA CO-OPS 9445526), at the north tip of Kitsap Peninsula at the mouth
@@ -51,11 +59,16 @@ WATER_KEY = "ma9"
 # --- scoring -----------------------------------------------------------------
 #
 # Two scores per hour:
-#   1. Continuous fishability `score` in [0..1] = tide * wind * precip
-#      (drives the heatmap colors and KPIs).
-#   2. Category in {GREEN, YELLOW, RED, OFF} based on slack +/- 1h and wind/gust
-#      thresholds; used only to highlight the ideal slack windows on the
-#      per-day tide wave SVG.
+#   1. Continuous fishability `score` in [0..1]
+#        = wind * precip * (0.4 + 0.6 * tide)
+#      Wind/precip are hard multipliers (zero them and the hour is dead).
+#      Tide is a soft modifier in [0.4 .. 1.0] -- flat-calm mid-cycle scores
+#      0.4 (Marginal), slack with the same wind scores 1.0 (Prime).
+#   2. Category in {GREEN, YELLOW, RED, OFF} -- slack window + wind tiers.
+#      Used only to highlight slack segments on the per-day tide wave SVG.
+#
+# A separate day-level wind badge (GLASS / BREEZY / BLOWN) signals whether
+# the whole day is fishable regardless of tide phase.
 
 CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF = "green", "yellow", "red", "off"
 
@@ -171,14 +184,34 @@ def _classify(in_slack: bool, wind_mph: Optional[float],
     return CAT_GREEN
 
 
+def _day_wind_badge(row: dict) -> tuple[str, str]:
+    """Return (label, css_class) summarizing daylight wind for one day.
+
+    Bands (max across daylight cells):
+      GLASS   max wind <= 7 mph AND max gust < 10 mph
+      BLOWN   max wind > 15 mph OR max gust >= 25 mph
+      BREEZY  everything in between
+    """
+    cells = row.get("cells") or []
+    if not cells:
+        return ("", "")
+    max_w = max((c.get("wind_mph") or 0.0) for c in cells)
+    max_g = max((c.get("gust_mph") or 0.0) for c in cells)
+    if max_w <= 7 and max_g < 10:
+        return ("GLASS", "glass")
+    if max_w > 15 or max_g >= 25:
+        return ("BLOWN", "blown")
+    return ("BREEZY", "breezy")
+
+
 def _score_cell_class(score: float) -> tuple[str, str]:
     """Continuous score -> (background, foreground) for heatmap cells.
-    Tiers: Prime / Good / Marginal / Poor / Terrible."""
-    if score >= 0.85: return ("#0078D4", "#FFFFFF")  # Prime     - blue
+    Tiers: Prime / Good / Marginal / Poor / Terrible (green -> red gradient)."""
+    if score >= 0.85: return ("#107C10", "#FFFFFF")  # Prime     - saturated green
     if score >= 0.45: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
-    if score >= 0.25: return ("#FFF4CE", "#5C4400")  # Marginal  - light yellow
-    if score > 0.0:   return ("#FED9B7", "#8A2900")  # Poor      - light orange
-    return ("#F3F2F1", "#A19F9D")                    # Terrible  - neutral
+    if score >= 0.25: return ("#FFF4CE", "#5C4400")  # Marginal  - yellow
+    if score > 0.0:   return ("#FED9B7", "#8A2900")  # Poor      - orange
+    return ("#A4262C", "#FFFFFF")                    # Terrible  - red
 
 
 def _fmt_clock(t: dt.datetime, with_minutes: bool = True) -> str:
@@ -248,7 +281,9 @@ def _assemble(start: dt.date) -> dict:
             ts = _tide_score(mins, half_win)
             ws = _wind_score(gust)
             ps = _precip_score(precip)
-            score = ts * ws * ps
+            # Soft tide modifier: 0.4x mid-cycle, 1.0x at slack. Wind/precip
+            # remain hard multipliers so a blown-out hour still scores zero.
+            score = ws * ps * (0.4 + 0.6 * ts)
             category = _classify(in_slack, wind, gust)
 
             cell = {
@@ -357,8 +392,15 @@ EXTRA_CSS = """
 .chart-legend .line.dotted{border-top-style:dotted;border-top-width:3px}
 .chart-grid{display:grid;grid-template-columns:1fr;gap:14px}
 .chart-card{background:#FFFFFF;border:1px solid var(--ms-border);border-radius:6px;
-            padding:8px 12px;box-shadow:var(--shadow-sm)}
+            padding:8px 12px;box-shadow:var(--shadow-sm);position:relative}
 .chart-card svg{display:block;width:100%;height:auto}
+.chart-card .day-badge{position:absolute;top:10px;right:14px;font-size:10px;
+                       padding:3px 9px;border-radius:10px;font-weight:700;
+                       letter-spacing:0.06em;border:1px solid transparent;
+                       font-variant-numeric:tabular-nums;z-index:2}
+.day-badge.glass{background:#DFF6DD;color:#0B6A0B;border-color:#92C593}
+.day-badge.breezy{background:#FFF4CE;color:#5C4400;border-color:#E8C77A}
+.day-badge.blown{background:#FED9B7;color:#8A2900;border-color:#E89F70}
 """
 
 
@@ -416,11 +458,11 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
     header = "<tr><th class='label'>Day</th>" + hour_headers + "</tr>"
     legend = (
         "<div class='legend'>"
-        "<span><span class='sw' style='background:#0078D4'></span>Prime (\u22650.85)</span>"
+        "<span><span class='sw' style='background:#107C10'></span>Prime (\u22650.85)</span>"
         "<span><span class='sw' style='background:#DFF6DD'></span>Good</span>"
         "<span><span class='sw' style='background:#FFF4CE'></span>Marginal</span>"
         "<span><span class='sw' style='background:#FED9B7'></span>Poor</span>"
-        "<span><span class='sw' style='background:#F3F2F1'></span>Terrible</span>"
+        "<span><span class='sw' style='background:#A4262C'></span>Terrible</span>"
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
@@ -618,16 +660,18 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         # chart's colored sections directly correspond to score tiers \u2014 the
         # whole tide curve becomes the score legend.
         TIER_FILL = {
-            "prime":    ("#0078D4", 0.30),
-            "good":     ("#107C10", 0.20),
-            "marginal": ("#FFF4CE", 0.85),
+            "prime":    ("#107C10", 0.45),
+            "good":     ("#107C10", 0.18),
+            "marginal": ("#FFE08A", 0.85),
             "poor":     ("#FED9B7", 0.85),
+            "terrible": ("#A4262C", 0.55),
         }
         TIER_STROKE = {
-            "prime":    "#0078D4",
+            "prime":    "#054B05",
             "good":     "#107C10",
-            "marginal": "#B07900",
-            "poor":     "#D04A0A",
+            "marginal": "#A8920A",
+            "poor":     "#A8330A",
+            "terrible": "#A4262C",
         }
 
         def _tier(score: float) -> Optional[str]:
@@ -639,7 +683,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 return "marginal"
             if score > 0.0:
                 return "poor"
-            return None  # Terrible \u2014 leave default tide color
+            return "terrible"
 
         cells_sorted = sorted(cells, key=lambda c: c["hour"])
         tier_spans: list[tuple[str, float, float]] = []
@@ -902,7 +946,7 @@ def _render_daily_charts(data: dict) -> str:
         "<span><span class='line dashed' style='border-color:#A4262C'></span>+2 ft tide (float line)</span>"
         "<span><span class='line' style='border-color:#5C2D91;border-top-style:dotted;border-top-width:3px'></span>Air temp (\u00b0F)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
-        "background:#0078D4;vertical-align:middle;margin-right:6px'></span>"
+        "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
         "Tide curve color = score tier (Prime/Good/Marginal/Poor)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
         "border-radius:3px;background:#107C10;color:#fff;text-align:center;font-size:10px;"
@@ -913,7 +957,7 @@ def _render_daily_charts(data: dict) -> str:
         "line-height:14px;font-weight:700;vertical-align:middle;margin-right:6px'>\u2605</span>"
         "<strong>PRIME</strong> &mdash; glass-calm slack (gust \u226410 mph &amp; wind \u22647 mph)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
-        "background:#0078D4;vertical-align:middle;margin-right:6px'></span>"
+        "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
         "Hourly fishability score (above frame)</span>"
         "</div>"
     )
@@ -921,7 +965,12 @@ def _render_daily_charts(data: dict) -> str:
     charts = []
     for row in data["grid"]:
         svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt)
-        charts.append(f"<div class='chart-card'>{svg}</div>")
+        badge_label, badge_cls = _day_wind_badge(row)
+        badge_html = (
+            f"<span class='day-badge {badge_cls}'>{badge_label}</span>"
+            if badge_label else ""
+        )
+        charts.append(f"<div class='chart-card'>{badge_html}{svg}</div>")
 
     return legend + f"<div class='chart-grid'>{''.join(charts)}</div>"
 
@@ -1016,15 +1065,22 @@ def build_html(start: Optional[dt.date] = None) -> str:
         f"{_render_top_kpis(data)}"
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
-        "<footer>Scoring: tide_score (1.0 at slack, linear decay to 0; the "
-        "half-window is sized per side by the adjacent swing \u2014 a 13 ft "
-        "drop into slack gives a tight \u00b145 min before-window, a 4 ft rise "
-        "out gives a generous \u00b13 hr after-window. Thresholds: &lt;3 ft = 6 hr, "
-        "3\u20136 = 3 hr, 6\u20139 = 90 min, \u22659 ft = 45 min) "
-        "\u00d7 wind_score (1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / &lt;25 / \u226525 mph) "
-        "\u00d7 precip_score. Tide curve color matches the heatmap tier \u2014 "
-        "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, "
-        "plain blue = Terrible. Daylight only (5 AM \u2013 9 PM PT). "
+        "<footer>Scoring: <b>wind_score &times; precip_score &times; (0.4 + 0.6 &times; tide_score)</b>. "
+        "Wind and precip are hard multipliers; tide is a soft modifier so a "
+        "glass-calm mid-cycle hour earns ~0.4 (Marginal) on big-swing days "
+        "instead of being crushed to zero or inflated to Good. tide_score is "
+        "1.0 at slack and decays linearly to 0; the half-window is sized per "
+        "side by the adjacent swing \u2014 a 13 ft drop into slack gives a tight "
+        "\u00b145 min before-window, a 4 ft rise out gives a generous \u00b13 hr "
+        "after-window. Thresholds: &lt;3 ft = 6 hr, 3\u20136 = 3 hr, 6\u20139 = 90 min, "
+        "\u22659 ft = 45 min. wind_score = 1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / "
+        "&lt;25 / \u226525 mph. GREEN tide-curve overlay = slack window with calm wind. "
+        "PRIME marker = slack with gust \u226410 &amp; wind \u22647. Per-day badge: "
+        "<b>GLASS</b> (max wind \u22647 &amp; gust \u226410), <b>BLOWN</b> (max wind &gt;15 "
+        "or gust \u226525), <b>BREEZY</b> in between. "
+        "Tide curve color matches the heatmap tier \u2014 "
+        "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "
+        "Daylight only (5 AM \u2013 9 PM PT). "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"

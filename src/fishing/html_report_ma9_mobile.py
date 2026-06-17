@@ -20,7 +20,7 @@ from . import ROOT
 from .html_report import CSS, _h, _kind_tag
 from .html_report_ma9 import (
     CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START,
-    _assemble, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
+    _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
 )
 
 
@@ -100,18 +100,20 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         line = "M " + " L ".join(f"{x_of(hr):.1f},{y_tide(v):.1f}" for hr, v in tide_pts)
         parts.append(f"<path d='{line}' fill='none' stroke='#005A9E' stroke-width='2.5'/>")
 
-        # Tier overlay across the full heatmap palette (Prime/Good/Marginal/Poor).
+        # Tier overlay across the full heatmap palette (Prime/Good/Marginal/Poor/Terrible).
         TIER_FILL = {
-            "prime":    ("#0078D4", 0.30),
-            "good":     ("#107C10", 0.20),
-            "marginal": ("#FFF4CE", 0.85),
+            "prime":    ("#107C10", 0.45),
+            "good":     ("#107C10", 0.18),
+            "marginal": ("#FFE08A", 0.85),
             "poor":     ("#FED9B7", 0.85),
+            "terrible": ("#A4262C", 0.55),
         }
         TIER_STROKE = {
-            "prime":    "#0078D4",
+            "prime":    "#054B05",
             "good":     "#107C10",
-            "marginal": "#B07900",
-            "poor":     "#D04A0A",
+            "marginal": "#A8920A",
+            "poor":     "#A8330A",
+            "terrible": "#A4262C",
         }
 
         def _tier(score: float):
@@ -123,7 +125,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 return "marginal"
             if score > 0.0:
                 return "poor"
-            return None
+            return "terrible"
 
         cells_sorted = sorted(cells, key=lambda c: c["hour"])
         tier_spans: list[tuple[str, float, float]] = []
@@ -391,11 +393,16 @@ body{margin:0;background:var(--ms-bg);font-family:var(--font-base);color:var(--m
 .m-alert{padding:10px 12px;border-radius:6px;margin-top:12px;font-size:13px;
          border-left:4px solid var(--ms-green);background:#DFF6DD;color:#0B6A0B}
 .m-day-hd{display:flex;justify-content:space-between;align-items:center;
-          margin-bottom:6px}
-.m-day-hd .pill{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700}
+          gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.m-day-hd .pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.m-day-hd .pill{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700;
+                letter-spacing:0.04em}
 .m-day-hd .pill.green{background:#DFF6DD;color:#0B6A0B}
 .m-day-hd .pill.prime{background:#FFB900;color:#3B2F00}
 .m-day-hd .pill.dim{background:#F3F2F1;color:#605E5C}
+.m-day-hd .pill.glass{background:#DFF6DD;color:#0B6A0B;border:1px solid #92C593}
+.m-day-hd .pill.breezy{background:#FFF4CE;color:#5C4400;border:1px solid #E8C77A}
+.m-day-hd .pill.blown{background:#FED9B7;color:#8A2900;border:1px solid #E89F70}
 
 footer{padding:18px var(--m-pad) 28px;font-size:11px;color:var(--ms-text-secondary);
        text-align:center}
@@ -554,13 +561,20 @@ def build_html(start: Optional[dt.date] = None) -> str:
                     "meh": "dim", "off": "dim"}[tier]
         pill_label = {"prime": "PRIME", "great": "GREAT", "good": "GOOD",
                       "meh": "fair", "off": "off"}[tier]
+        wind_label, wind_cls = _day_wind_badge(row)
+        wind_pill = (
+            f"<span class='pill {wind_cls}'>{wind_label}</span>"
+            if wind_label else ""
+        )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
         svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt)
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"
             f"<h3 style='margin:0'>{day.strftime('%A %b %#d')}</h3>"
+            f"<span class='pills'>{wind_pill}"
             f"<span class='pill {pill_cls}'>{pill_label} \u00b7 {peak_desc}</span>"
+            f"</span>"
             f"</div>"
             f"{svg}"
             + (f"<div style='margin-top:8px'>{tide_rows}</div>" if tide_rows else "")
@@ -591,12 +605,16 @@ def build_html(start: Optional[dt.date] = None) -> str:
         + "</section>"
         "<footer>"
         f"<div>{_h(w.name)} \u00b7 tide station Hansville (9445526)</div>"
-        "<div>Score = tide \u00d7 wind \u00d7 precip. Tide half-window scales with the "
-        "adjacent swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). "
-        "Wind tiers by gust: &lt;12 / &lt;18 / &lt;25 / \u226525 mph.</div>"
+        "<div>Score = wind \u00d7 precip \u00d7 (0.4 + 0.6 \u00d7 tide). Wind/precip are hard "
+        "multipliers; tide is a soft modifier so flat-calm mid-cycle hours "
+        "land at ~0.4 (Marginal). Tide half-window scales with the adjacent "
+        "swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). Wind tiers by gust: "
+        "&lt;12 / &lt;18 / &lt;25 / \u226525 mph. Day badge: <b>GLASS</b> (max wind \u22647, "
+        "gust \u226410), <b>BLOWN</b> (wind &gt;15 or gust \u226525), <b>BREEZY</b> in "
+        "between.</div>"
         "<div>Tide curve color matches the heatmap tier: "
-        "<b>blue</b>=Prime, <b>green</b>=Good, <b>yellow</b>=Marginal, "
-        "<b>orange</b>=Poor, plain blue = Terrible.</div>"
+        "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, "
+        "<b>orange</b>=Poor, <b>red</b>=Terrible.</div>"
         f"<div>Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])} \u00b7 "
         "NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC</div>"
         "</footer>"

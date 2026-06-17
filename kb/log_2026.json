@@ -1,0 +1,22 @@
+{
+  "headers": [
+    "Date",
+    "Fish",
+    "Pink",
+    "Coho",
+    "Chinook",
+    "Hours",
+    "Notes"
+  ],
+  "rows": [
+    {
+      "Date": "2026-06-16 00:00:00",
+      "Fish": 2,
+      "Pink": null,
+      "Coho": 2,
+      "Chinook": null,
+      "Hours": null,
+      "Notes": "Apple Cove, Kingston (MA9). Launched from Mill Beach (cabin), easy 20-min run across the shipping lanes, water flat, beautiful weather. Started fishing ~5:15 AM trolling north-to-south; both coho hit in the first 10 minutes. Downrigger at 55 ft over ~100 ft of water."
+    }
+  ]
+}
