@@ -46,8 +46,10 @@ jobs:
       - name: Build reports into docs/
         run: |
           mkdir -p docs
-          python -m fishing.html_report_ma9        docs/index.html
-          python -m fishing.html_report_ma9_mobile docs/mobile.html
+          # Single process so desktop + mobile share one weather fetch
+          # (otherwise the gust forecast can refresh between runs and the
+          # two reports disagree on the gold PRIME marker).
+          python -m fishing.build_reports docs/index.html docs/mobile.html
 
       - name: Commit and push if changed
         run: |

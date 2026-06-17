@@ -975,9 +975,10 @@ def _render_daily_charts(data: dict) -> str:
     return legend + f"<div class='chart-grid'>{''.join(charts)}</div>"
 
 
-def build_html(start: Optional[dt.date] = None) -> str:
+def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> str:
     start = start or dt.date.today()
-    data = _assemble(start)
+    if data is None:
+        data = _assemble(start)
     w = data["water"]
 
     sub = f"{_kind_tag(w.kind)} {w.lat:.3f}, {w.lon:.3f} · tide station Hansville (9445526)"

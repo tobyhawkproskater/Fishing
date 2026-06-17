@@ -536,9 +536,10 @@ def _lingcod_alert_mobile(start: dt.date) -> str:
 
 # --- page assembly -----------------------------------------------------------
 
-def build_html(start: Optional[dt.date] = None) -> str:
+def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> str:
     start = start or dt.date.today()
-    data = _assemble(start)
+    if data is None:
+        data = _assemble(start)
     w = data["water"]
     generated = dt.datetime.now().strftime("%b %d, %#I:%M %p")
 
