@@ -204,7 +204,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"stroke='#107C10' stroke-width='1.8' stroke-dasharray='6,3' opacity='0.9'/>"
                 )
                 badge_fill, badge_text = "#107C10", "#FFFFFF"
-                label = f"\u2605 GOOD {_fmt_clock(t)}"
+                label = f"\u2605 SLACK {_fmt_clock(t)}"
                 badge_h, font_sz = 19, 12
 
             badge_y = 54
