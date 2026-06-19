@@ -309,7 +309,9 @@ def _assemble(start: dt.date) -> dict:
             all_windows.append(_summarize_run(run))
         grid.append(row)
 
-    all_windows.sort(key=lambda r: (-r["peak_score"], -r["hours"]))
+    # Rank windows by sustained quality (area under the score curve), not just
+    # peak height. A brief 0.95 flash now ranks below a longer 0.80 stretch.
+    all_windows.sort(key=lambda r: (-r["quality"], -r["peak_score"], -r["hours"]))
 
     return {
         "water": w,
@@ -341,6 +343,7 @@ def _summarize_run(run: list[dict]) -> dict:
         "end_hour": last.hour,
         "hours": len(run),
         "peak_score": peak["score"],
+        "quality": sum(c["score"] for c in run),
         "peak_time": peak["time"],
         "nearest_tide": anchor,
         "tide_kind": anchor.get("type"),
@@ -494,7 +497,7 @@ def _render_top_kpis(data: dict) -> str:
     windows = data["windows"]
     today = data["start"]
     best_today = max((w for w in windows if w["date"] == today),
-                     key=lambda w: w["peak_score"], default=None)
+                     key=lambda w: w["quality"], default=None)
     best_overall = windows[0] if windows else None
 
     ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.85)
@@ -507,14 +510,14 @@ def _render_top_kpis(data: dict) -> str:
         date = w["date"].strftime("%a")
         start = f"{w['start_hour'] % 12 or 12}{'a' if w['start_hour'] < 12 else 'p'}"
         end = f"{(w['end_hour']+1) % 12 or 12}{'a' if (w['end_hour']+1) < 12 else 'p'}"
-        return (f"{date} {start}\u2013{end}", f"score {w['peak_score']:.2f}")
+        hrs = w["hours"]
+        hr_lbl = "hr" if hrs == 1 else "hrs"
+        return (f"{date} {start}\u2013{end}", f"peak {w['peak_score']:.2f} \u00b7 {hrs} {hr_lbl}")
 
     today_val, today_sub = _fmt_window(best_today)
     overall_val, overall_sub = _fmt_window(best_overall)
 
     kpis = [
-        ("",       "From Cabin",       f"{data['distance_cabin_mi']} mi", "great-circle"),
-        ("teal",   "From Home",        f"{data['distance_home_mi']} mi",  "great-circle"),
         ("green",  "Best Today",       today_val,   today_sub),
         ("",       "Best This Week",   overall_val, overall_sub),
         ("purple", "Ideal Hours (7d)", str(ideal_hours), "score \u2265 0.85"),
@@ -753,6 +756,12 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 and (slack_cell.get("gust_mph") or 0) <= 10
                 and (slack_cell.get("wind_mph") or 0) <= 7
             )
+            score_val = (slack_cell or {}).get("score")
+            score_str = (
+                f"{score_val:.2f}".lstrip("0")
+                if isinstance(score_val, (int, float)) and score_val > 0
+                else ""
+            )
 
             if prime:
                 # Soft gold vertical band behind the green stroke.
@@ -767,7 +776,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 )
                 badge_fill = "#FFB900"
                 badge_text = "#3B2F00"
-                label = f"\u2605 PRIME {_fmt_clock(t)}"
+                label = f"\u2605 PRIME {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 PRIME {_fmt_clock(t)}"
                 badge_h = 18
                 font_sz = 11
             else:
@@ -777,7 +786,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 )
                 badge_fill = "#107C10"
                 badge_text = "#FFFFFF"
-                label = f"\u2605 GOOD {_fmt_clock(t)}"
+                label = f"\u2605 GOOD {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 GOOD {_fmt_clock(t)}"
                 badge_h = 15
                 font_sz = 10
 

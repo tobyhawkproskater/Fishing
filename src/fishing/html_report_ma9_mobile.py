@@ -185,6 +185,12 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 and (slack_cell.get("gust_mph") or 0) <= 10
                 and (slack_cell.get("wind_mph") or 0) <= 7
             )
+            score_val = (slack_cell or {}).get("score")
+            score_str = (
+                f"{score_val:.2f}".lstrip("0")
+                if isinstance(score_val, (int, float)) and score_val > 0
+                else ""
+            )
             if prime:
                 band_w = max(10.0, IW / 24.0 * 0.6)
                 parts.append(
@@ -196,7 +202,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"stroke='#D29200' stroke-width='2.5' opacity='0.95'/>"
                 )
                 badge_fill, badge_text = "#FFB900", "#3B2F00"
-                label = f"\u2605 PRIME {_fmt_clock(t)}"
+                label = f"\u2605 PRIME {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 PRIME {_fmt_clock(t)}"
                 badge_h, font_sz = 22, 14
             else:
                 parts.append(
@@ -204,7 +210,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"stroke='#107C10' stroke-width='1.8' stroke-dasharray='6,3' opacity='0.9'/>"
                 )
                 badge_fill, badge_text = "#107C10", "#FFFFFF"
-                label = f"\u2605 GOOD {_fmt_clock(t)}"
+                label = f"\u2605 GOOD {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 GOOD {_fmt_clock(t)}"
                 badge_h, font_sz = 19, 12
 
             badge_y = 54
@@ -435,7 +441,7 @@ def _render_mobile_kpis(data: dict) -> str:
     windows = data["windows"]
     today = data["start"]
     best_today = max((w for w in windows if w["date"] == today),
-                     key=lambda w: w["peak_score"], default=None)
+                     key=lambda w: w["quality"], default=None)
     best_overall = windows[0] if windows else None
 
     ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.85)
@@ -456,7 +462,10 @@ def _render_mobile_kpis(data: dict) -> str:
         e_hh = end_h % 12 or 12
         s_ap = "a" if start_h < 12 else "p"
         e_ap = "a" if end_h < 12 else "p"
-        return (f"{date} {s_hh}{s_ap}\u2013{e_hh}{e_ap}", f"score {w['peak_score']:.2f}")
+        hrs = w["hours"]
+        hr_lbl = "hr" if hrs == 1 else "hrs"
+        return (f"{date} {s_hh}{s_ap}\u2013{e_hh}{e_ap}",
+                f"peak {w['peak_score']:.2f} \u00b7 {hrs} {hr_lbl}")
 
     today_val, today_sub = _fmt_window(best_today)
     overall_val, overall_sub = _fmt_window(best_overall)
