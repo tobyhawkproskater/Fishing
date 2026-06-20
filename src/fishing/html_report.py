@@ -115,10 +115,6 @@ def _gather_water(w: Water, start: dt.date) -> dict:
     regs = kb.regulations(base_name)
     out["rules_current"] = regs.get("current", [])[:3]
     out["rules_proposed"] = regs.get("proposed", [])[:2]
-    month_name = start.strftime("%B")
-    out["calendar_month"] = month_name
-    cal_rows = kb.calendar(month=month_name)
-    out["calendar"] = cal_rows[0] if cal_rows else None
 
     return out
 
@@ -417,23 +413,6 @@ def _render_kpi_strip(data: dict) -> str:
     return f"<div class='kpi-strip'>{''.join(cells)}</div>"
 
 
-def _render_calendar(month: str, cal: Optional[dict], water_key: str) -> str:
-    if not cal:
-        return f"<p class='dim'>No calendar entry for {_h(month)}.</p>"
-    note = cal.get(water_key) or cal.get("notes") or ""
-    bits = [f"<strong>{_h(cal.get('month'))}</strong>"]
-    if note:
-        bits.append(_h(note))
-    other = []
-    for k in ("ma9", "ma10", "skykomish", "snohomish", "snoqualmie", "lake_sammamish"):
-        if k != water_key and cal.get(k):
-            other.append(f"<em>{k}</em>: {_h(cal[k])}")
-    body = " — ".join(bits)
-    extra = ("<details><summary>Other waters this month</summary>"
-             "<ul><li>" + "</li><li>".join(other) + "</li></ul></details>") if other else ""
-    return f"<div>{body}</div>{extra}"
-
-
 def _render_water(data: dict) -> str:
     w: Water = data["water"]
     sub = f"{w.lat:.3f}, {w.lon:.3f}"
@@ -477,11 +456,6 @@ def _render_water(data: dict) -> str:
         cards.append(
             f"<div class='card'><h3>NWS forecast</h3>{_render_nws(data.get('nws', {}))}</div>"
         )
-
-    cards.append(
-        f"<div class='card'><h3>Seasonal notes ({_h(data['calendar_month'])})</h3>"
-        f"{_render_calendar(data['calendar_month'], data.get('calendar'), w.key)}</div>"
-    )
 
     cards.append(
         "<div class='card'><h3>Regulations</h3>"

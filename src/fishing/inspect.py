@@ -64,12 +64,11 @@ def main(argv: list[str]) -> None:
     cmd, *rest = argv
     if cmd == "rules" and rest:
         rules(rest[0])
-    elif cmd in {"species", "calendar", "gear", "log_2025",
-                 "rules_current", "rules_proposed", "place", "boat"}:
+    elif cmd in {"gear", "rules_current", "rules_proposed", "place", "boat"}:
         dump(cmd)
     else:
         print(__doc__)
-        print("Usage: python -m fishing.inspect [summary|species|calendar|gear|log_2025"
+        print("Usage: python -m fishing.inspect [summary|gear"
               "|rules_current|rules_proposed|rules <area>]")
 
 

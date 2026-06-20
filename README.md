@@ -7,7 +7,7 @@ can generate an up-to-the-minute fishing report on demand.
 
 ## Source documents (in repo root)
 - `Key facts.docx` — home/cabin/boat
-- `Salmon Steelhead Trout.xlsx` — species, calendar, gear, 2025 log, state master
+- `Fishing Gear.xlsx` — rod/reel/line catalog
 - `Washington State Rules.pdf` — WDFW 2025-26 pamphlet (effective 7/1/2025-6/30/2026)
 - `Proposed State Plan.pdf` — proposed 2026-27 MA5-13 regs
 
@@ -31,7 +31,7 @@ Outputs go to `kb/`:
 ## Inspect
 ```powershell
 python -m fishing.inspect            # high-level summary
-python -m fishing.inspect species    # dump species table
+python -m fishing.inspect gear       # dump gear table
 python -m fishing.inspect rules MA9  # current + proposed rules for MA9
 ```
 
@@ -60,8 +60,7 @@ The server speaks stdio. Register it in **Claude Desktop** by adding to
 |---|---|
 | `list_waters`, `list_spots`, `get_places`, `get_boat` | Static reference |
 | `get_regulations(water, source?)` | Current + proposed WDFW rules |
-| `get_calendar(water?, month?)` | Seasonal calendar |
-| `get_species(name?)`, `get_gear(use?)`, `get_log_2025()` | Workbook lookups |
+| `get_gear(use?)` | Gear catalog lookup |
 | `get_distance(from, to)` | Great-circle miles between known names |
 | `get_forecast(water, hourly?)` | NOAA NWS land forecast |
 | `get_marine_forecast(water)` | NWS coastal-waters text for MA9/MA10 |
@@ -79,9 +78,9 @@ NOAA NWS, NOAA CO-OPS, NDBC, Open-Meteo.
 
 Two report generators are available:
 
-- `python -m fishing.html_report` � 7-day Fluent-themed HTML for all 6 waters
+- `python -m fishing.html_report` � 7-day Fluent-themed HTML for all 6 waters
   (MA9, MA10, Skykomish, Snohomish, Snoqualmie, Lake Sammamish).
-- `python -m fishing.html_report_ma9` � MA9-only deep-dive with tide-x-weather
+- `python -m fishing.html_report_ma9` � MA9-only deep-dive with tide-x-weather
   heatmap, per-day SVG (tide curve + wind + temp + score strip + best-moment
   badges + +2 ft float-line reference). **This is the canonical template.**
 

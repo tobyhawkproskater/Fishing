@@ -62,27 +62,9 @@ def get_regulations(water: str, source: str = "both") -> dict:
 
 
 @mcp.tool()
-def get_calendar(water: Optional[str] = None, month: Optional[str] = None) -> list[dict]:
-    """Seasonal fishing calendar. Filter by water and/or month name."""
-    return kb.calendar(water=water, month=month)
-
-
-@mcp.tool()
-def get_species(name: Optional[str] = None) -> list[dict]:
-    """Species reference info from the workbook. Optional substring filter."""
-    return kb.species(name)
-
-
-@mcp.tool()
 def get_gear(use: Optional[str] = None) -> list[dict]:
     """Gear inventory. Optional filter on the Use column."""
     return kb.gear(use)
-
-
-@mcp.tool()
-def get_log_2025() -> list[dict]:
-    """2025 trip log."""
-    return kb.log_2025()
 
 
 # --- Distance ---------------------------------------------------------------
@@ -147,7 +129,7 @@ def get_wind(water: str, hours: int = 48) -> dict:
 @mcp.tool()
 def generate_report(water: str, date: Optional[str] = None,
                     from_place: str = "home", as_markdown: bool = True) -> dict:
-    """One-shot fishing report: rules + calendar + forecast + wind + (marine: tides + buoys).
+    """One-shot fishing report: rules + forecast + wind + (marine: tides + buoys).
 
     Returns a dict with `data` (structured) and optional `markdown` (human-readable).
     """

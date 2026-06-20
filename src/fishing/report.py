@@ -66,10 +66,6 @@ def generate_report(water: str, date: Optional[str] = None, from_place: str = "h
         ],
     }
 
-    # Seasonal calendar row for this month
-    cal_rows = kb.calendar(month=month)
-    report["calendar"] = cal_rows[:1] if cal_rows else []
-
     # Weather (NWS land forecast only for non-marine; marine waters use the zone text)
     if w.kind != "marine":
         report["forecast"] = nws_forecast(w.lat, w.lon, hourly=False)
@@ -99,22 +95,6 @@ def format_report_markdown(rep: dict) -> str:
         f"- From home: {rep.get('distance_home_miles')} mi  ·  "
         f"From cabin: {rep.get('distance_cabin_miles')} mi",
     ]
-
-    # Calendar
-    if rep.get("calendar"):
-        c = rep["calendar"][0]
-        key = w["key"]
-        target_col = key if key in c else None
-        if not target_col:
-            for k in ("ma9", "ma10", "skykomish", "snohomish",
-                      "snoqualmie", "lake_sammamish"):
-                if k in c and c[k]:
-                    target_col = k; break
-        lines.append("")
-        lines.append("## Seasonal calendar")
-        lines.append(f"- **{c.get('month')}** — {c.get(target_col) or '(no entry)'}")
-        if c.get("notes"):
-            lines.append(f"- Notes: {c['notes']}")
 
     # Regulations
     lines.append("")

@@ -66,46 +66,13 @@ def regulations(water: str, source: str = "both") -> dict:
     return out
 
 
-# --- calendar / species / gear / log ----------------------------------------
-
-def calendar(water: Optional[str] = None, month: Optional[str] = None) -> list[dict]:
-    sql = "SELECT * FROM calendar"
-    args: tuple = ()
-    if month:
-        sql += " WHERE month LIKE ?"
-        args = (f"%{month}%",)
-    with _conn() as c:
-        rows = _rows(c.execute(sql, args))
-    if water:
-        col = water.lower().replace(" ", "_")
-        # narrow to month + the water column if it exists
-        rows = [
-            {"month": r["month"], water: r.get(col), "notes": r.get("notes")}
-            for r in rows if r.get(col)
-        ]
-    return rows
-
-
-def species(name: Optional[str] = None) -> list[dict]:
-    with _conn() as c:
-        if name:
-            return _rows(c.execute(
-                "SELECT * FROM species WHERE species LIKE ? OR subtype LIKE ?",
-                (f"%{name}%", f"%{name}%"),
-            ))
-        return _rows(c.execute("SELECT * FROM species"))
-
+# --- gear -------------------------------------------------------------------
 
 def gear(use: Optional[str] = None) -> list[dict]:
     with _conn() as c:
         if use:
             return _rows(c.execute("SELECT * FROM gear WHERE use LIKE ?", (f"%{use}%",)))
         return _rows(c.execute("SELECT * FROM gear"))
-
-
-def log_2025() -> list[dict]:
-    with _conn() as c:
-        return _rows(c.execute("SELECT * FROM log_2025 ORDER BY date"))
 
 
 def meta() -> dict:
