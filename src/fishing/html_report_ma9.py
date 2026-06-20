@@ -5,7 +5,11 @@ Scoring model (per daylight hour, 5 AM - 9 PM PT):
 where
     tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at the edge of
                    the per-side half-window (sized by the adjacent swing).
-    wind_score   = 1.0 / 0.7 / 0.3 / 0.0 for gusts <12 / <18 / <25 / >=25 mph
+    wind_score   = tiered on effective wind (0.65*wind + 0.35*gust):
+                   1.0 / 0.7 / 0.3 / 0.0 for eff <12 / <18 / <25 / >=25 mph.
+                   Sustained wind is weighted heavier than gust because flat
+                   water is what matters; an occasional puff over calm air
+                   shouldn't knock an hour out of Prime.
     precip_score = 1.0 if <0.05 in/h, else 0.5
 
 Tide is a soft modifier (0.4x .. 1.0x), not a hard multiplier: a glass-calm
@@ -158,11 +162,15 @@ def _tide_score(minutes_to_slack: Optional[float], half_window_min: float = 60.0
     return max(0.0, 1.0 - minutes_to_slack / half_window_min)
 
 
-def _wind_score(gust_mph: Optional[float]) -> float:
-    g = gust_mph if gust_mph is not None else 0.0
-    if g < 12: return 1.0
-    if g < 18: return 0.7
-    if g < 25: return 0.3
+def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float]) -> float:
+    # Flat water matters more than the occasional puff, so sustained wind
+    # dominates: effective = 0.65 * wind + 0.35 * gust. Same tier thresholds.
+    w = wind_mph if wind_mph is not None else 0.0
+    g = gust_mph if gust_mph is not None else w
+    eff = 0.65 * w + 0.35 * g
+    if eff < 12: return 1.0
+    if eff < 18: return 0.7
+    if eff < 25: return 0.3
     return 0.0
 
 
@@ -279,7 +287,7 @@ def _assemble(start: dt.date) -> dict:
                     half_win = max(before_win, after_win)
             in_slack = mins is not None and mins <= half_win
             ts = _tide_score(mins, half_win)
-            ws = _wind_score(gust)
+            ws = _wind_score(wind, gust)
             ps = _precip_score(precip)
             # Soft tide modifier: 0.4x mid-cycle, 1.0x at slack. Wind/precip
             # remain hard multipliers so a blown-out hour still scores zero.
@@ -1084,7 +1092,9 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "side by the adjacent swing \u2014 a 13 ft drop into slack gives a tight "
         "\u00b145 min before-window, a 4 ft rise out gives a generous \u00b13 hr "
         "after-window. Thresholds: &lt;3 ft = 6 hr, 3\u20136 = 3 hr, 6\u20139 = 90 min, "
-        "\u22659 ft = 45 min. wind_score = 1.0/0.7/0.3/0.0 for gusts &lt;12 / &lt;18 / "
+        "\u22659 ft = 45 min. wind_score = 1.0/0.7/0.3/0.0 on effective wind "
+        "= 0.65\u00d7wind + 0.35\u00d7gust (sustained wind weighted heavier than "
+        "gust because flat water is what matters); tiers &lt;12 / &lt;18 / "
         "&lt;25 / \u226525 mph. GREEN tide-curve overlay = slack window with calm wind. "
         "PRIME marker = slack with gust \u226410 &amp; wind \u22647. Per-day badge: "
         "<b>GLASS</b> (max wind \u22647 &amp; gust \u226410), <b>BLOWN</b> (max wind &gt;15 "
