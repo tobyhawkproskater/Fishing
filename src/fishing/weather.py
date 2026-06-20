@@ -369,30 +369,41 @@ def nws_gridpoints_hourly(lat: float, lon: float, hours: int = 168) -> dict:
 # --- Blended wind forecast --------------------------------------------------
 
 def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
-    """Combine Open-Meteo (multi-model ensemble) with NWS gridpoints.
+    """Wind forecast with ECMWF as the primary source.
 
-    For each hour, wind/gust are the mean of all sources that returned a value
-    for that hour; wind direction is the circular mean. Temperature and
-    precipitation come from Open-Meteo (NWS gridpoints offers them too but at
-    coarser time resolution, so we keep this simple). If a source fails, the
-    other carries the forecast.
+    For each hour, wind/gust/direction come from ECMWF (Open-Meteo
+    `ecmwf_ifs025`) when available. Hours or fields where ECMWF returns no
+    value fall back to the mean of GFS, ICON, and NWS gridpoints so coverage
+    stays continuous. Temperature and precipitation always come from
+    Open-Meteo. If ECMWF entirely fails, the full multi-model + NWS blend
+    takes over; if everything fails, single-model Open-Meteo is the last
+    resort.
 
     Returns the same row shape as `open_meteo`, with `sources` listing the
-    feeds that contributed.
+    feeds that contributed and `primary` flagging ECMWF when present.
     """
     import math
 
-    om = open_meteo_multi(lat, lon, hours=hours)
+    ecmwf = open_meteo_multi(lat, lon, hours=hours, models=("ecmwf_ifs025",))
+    others = open_meteo_multi(lat, lon, hours=hours,
+                              models=("gfs_seamless", "icon_seamless"))
     nws = nws_gridpoints_hourly(lat, lon, hours=hours)
 
-    om_hours = {r["time"]: r for r in om.get("hours", [])}
+    ecmwf_hours = {r["time"]: r for r in ecmwf.get("hours", [])}
+    other_hours = {r["time"]: r for r in others.get("hours", [])}
     nws_hours = {r["time"]: r for r in nws.get("hours", [])}
 
-    sources: list[str] = []
-    if "error" not in om and om_hours:
-        sources.append("Open-Meteo (" + "+".join(om.get("models_used", [])) + ")")
+    ecmwf_ok = "error" not in ecmwf and ecmwf_hours
+    fallback_sources: list[str] = []
+    if "error" not in others and other_hours:
+        fallback_sources.append("Open-Meteo (" + "+".join(others.get("models_used", [])) + ")")
     if "error" not in nws and nws_hours:
-        sources.append("NWS gridpoints")
+        fallback_sources.append("NWS gridpoints")
+
+    sources: list[str] = []
+    if ecmwf_ok:
+        sources.append("ECMWF IFS 0.25\u00b0 (primary)")
+    sources.extend(f"{s} (fallback)" for s in fallback_sources)
 
     def _mean(vals: list[Optional[float]]) -> Optional[float]:
         nums = [v for v in vals if v is not None]
@@ -406,27 +417,37 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         cx = sum(math.cos(r) for r in rads) / len(rads)
         return (math.degrees(math.atan2(sx, cx)) + 360.0) % 360.0
 
-    keys = sorted(set(om_hours) | set(nws_hours))
-    rows: list[dict] = []
-    for k in keys:
-        om_r = om_hours.get(k, {})
-        nws_r = nws_hours.get(k, {})
-        rows.append({
-            "time": k,
-            "temp_f": om_r.get("temp_f"),
-            "precip_in": om_r.get("precip_in"),
-            "wind_mph": _mean([om_r.get("wind_mph"), nws_r.get("wind_mph")]),
-            "gust_mph": _mean([om_r.get("gust_mph"), nws_r.get("gust_mph")]),
-            "wind_dir_deg": _circ_mean([om_r.get("wind_dir_deg"), nws_r.get("wind_dir_deg")]),
-        })
-
-    if not sources:
-        # Both feeds failed; fall back to single-model Open-Meteo as last resort.
+    # If ECMWF is entirely unavailable, fall through to the legacy multi-source
+    # mean (GFS+ICON+NWS) so the report still renders.
+    if not ecmwf_ok and not fallback_sources:
         return open_meteo(lat, lon, hours=hours)
 
+    keys = sorted(set(ecmwf_hours) | set(other_hours) | set(nws_hours))
+    rows: list[dict] = []
+    for k in keys:
+        e_r = ecmwf_hours.get(k, {})
+        o_r = other_hours.get(k, {})
+        n_r = nws_hours.get(k, {})
+        # ECMWF wins per field when it has a value; otherwise mean of the rest.
+        wind_e = e_r.get("wind_mph")
+        gust_e = e_r.get("gust_mph")
+        dir_e = e_r.get("wind_dir_deg")
+        wind = wind_e if wind_e is not None else _mean([o_r.get("wind_mph"), n_r.get("wind_mph")])
+        gust = gust_e if gust_e is not None else _mean([o_r.get("gust_mph"), n_r.get("gust_mph")])
+        wdir = dir_e if dir_e is not None else _circ_mean([o_r.get("wind_dir_deg"), n_r.get("wind_dir_deg")])
+        rows.append({
+            "time": k,
+            "temp_f": e_r.get("temp_f") if e_r.get("temp_f") is not None else o_r.get("temp_f"),
+            "precip_in": e_r.get("precip_in") if e_r.get("precip_in") is not None else o_r.get("precip_in"),
+            "wind_mph": wind,
+            "gust_mph": gust,
+            "wind_dir_deg": wdir,
+        })
+
     return {
-        "source": "Blend (" + " + ".join(sources) + ")",
+        "source": "ECMWF primary" + (f" + {' + '.join(fallback_sources)}" if fallback_sources else ""),
         "lat": lat, "lon": lon,
         "sources": sources,
+        "primary": "ECMWF IFS 0.25\u00b0" if ecmwf_ok else None,
         "hours": rows,
     }

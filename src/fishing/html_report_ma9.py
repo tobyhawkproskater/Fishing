@@ -995,6 +995,13 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
     # Cards
     cards = []
 
+    # Best windows (surfaced at the top — the most actionable view)
+    cards.append(
+        "<div class='card' style='grid-column:1/-1'>"
+        "<h3>Best windows (next 7 days)</h3>"
+        + _render_window_list(data["windows"]) + "</div>"
+    )
+
     # Heatmap card
     cards.append(
         "<div class='card' style='grid-column:1/-1'>"
@@ -1009,12 +1016,6 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<h3>Daily Detail \u2014 Tide / Wind / Temperature</h3>"
         + _render_daily_charts(data)
         + "</div>"
-    )
-
-    # Best windows
-    cards.append(
-        "<div class='card'><h3>Best windows (next 7 days)</h3>"
-        + _render_window_list(data["windows"]) + "</div>"
     )
 
     # Tides
