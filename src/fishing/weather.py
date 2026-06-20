@@ -369,30 +369,33 @@ def nws_gridpoints_hourly(lat: float, lon: float, hours: int = 168) -> dict:
 # --- Blended wind forecast --------------------------------------------------
 
 def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
-    """Wind forecast with ECMWF as the primary source.
+    """Wind forecast with HRRR primary 0-48h, ECMWF primary 48-168h.
 
-    For each hour, wind/gust/direction come from ECMWF (Open-Meteo
-    `ecmwf_ifs025`) when available. Hours or fields where ECMWF returns no
-    value fall back to the mean of GFS, ICON, and NWS gridpoints so coverage
-    stays continuous. Temperature and precipitation always come from
-    Open-Meteo. If ECMWF entirely fails, the full multi-model + NWS blend
-    takes over; if everything fails, single-model Open-Meteo is the last
-    resort.
+    Source waterfall, applied per-hour and per-field:
+      1. HRRR (NOAA 3km CONUS) for forecast hours <= 48 when available
+         - the highest-resolution model that resolves Puget Sound microclimate
+           (Olympic rain shadow, Strait outflow, convergence zones).
+      2. ECMWF IFS 0.25\u00b0 (global) for the rest of the week.
+      3. Mean of GFS + ICON (Open-Meteo) + NWS gridpoints fills any gap.
+    Direction uses circular mean when falling back.
 
     Returns the same row shape as `open_meteo`, with `sources` listing the
-    feeds that contributed and `primary` flagging ECMWF when present.
+    feeds that contributed and the role each played.
     """
     import math
 
+    hrrr = open_meteo_multi(lat, lon, hours=min(hours, 48), models=("gfs_hrrr",))
     ecmwf = open_meteo_multi(lat, lon, hours=hours, models=("ecmwf_ifs025",))
     others = open_meteo_multi(lat, lon, hours=hours,
                               models=("gfs_seamless", "icon_seamless"))
     nws = nws_gridpoints_hourly(lat, lon, hours=hours)
 
+    hrrr_hours = {r["time"]: r for r in hrrr.get("hours", [])}
     ecmwf_hours = {r["time"]: r for r in ecmwf.get("hours", [])}
     other_hours = {r["time"]: r for r in others.get("hours", [])}
     nws_hours = {r["time"]: r for r in nws.get("hours", [])}
 
+    hrrr_ok = "error" not in hrrr and hrrr_hours
     ecmwf_ok = "error" not in ecmwf and ecmwf_hours
     fallback_sources: list[str] = []
     if "error" not in others and other_hours:
@@ -401,8 +404,10 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         fallback_sources.append("NWS gridpoints")
 
     sources: list[str] = []
+    if hrrr_ok:
+        sources.append("NOAA HRRR 3 km (primary 0-48 h)")
     if ecmwf_ok:
-        sources.append("ECMWF IFS 0.25\u00b0 (primary)")
+        sources.append("ECMWF IFS 0.25\u00b0 (primary 48-168 h)")
     sources.extend(f"{s} (fallback)" for s in fallback_sources)
 
     def _mean(vals: list[Optional[float]]) -> Optional[float]:
@@ -417,37 +422,62 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         cx = sum(math.cos(r) for r in rads) / len(rads)
         return (math.degrees(math.atan2(sx, cx)) + 360.0) % 360.0
 
-    # If ECMWF is entirely unavailable, fall through to the legacy multi-source
-    # mean (GFS+ICON+NWS) so the report still renders.
-    if not ecmwf_ok and not fallback_sources:
+    # If every source failed, fall through to single-model Open-Meteo so the
+    # report still renders rather than throwing.
+    if not (hrrr_ok or ecmwf_ok or fallback_sources):
         return open_meteo(lat, lon, hours=hours)
 
-    keys = sorted(set(ecmwf_hours) | set(other_hours) | set(nws_hours))
+    # Determine "now" so we can decide HRRR-eligible hours (<=48h ahead). Time
+    # keys are local Pacific naive strings ("YYYY-MM-DDTHH:00"); compare in
+    # local naive time.
+    try:
+        from zoneinfo import ZoneInfo
+        now_local = dt.datetime.now(ZoneInfo("America/Los_Angeles")).replace(
+            tzinfo=None, minute=0, second=0, microsecond=0)
+    except Exception:
+        now_local = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
+
+    def _pick(field: str, h_r: dict, e_r: dict, o_r: dict, n_r: dict,
+              hours_ahead: float, circ: bool = False) -> Optional[float]:
+        if hrrr_ok and hours_ahead <= 48 and h_r.get(field) is not None:
+            return h_r[field]
+        if ecmwf_ok and e_r.get(field) is not None:
+            return e_r[field]
+        vals = [o_r.get(field), n_r.get(field)]
+        return _circ_mean(vals) if circ else _mean(vals)
+
+    keys = sorted(set(hrrr_hours) | set(ecmwf_hours) | set(other_hours) | set(nws_hours))
     rows: list[dict] = []
     for k in keys:
+        h_r = hrrr_hours.get(k, {})
         e_r = ecmwf_hours.get(k, {})
         o_r = other_hours.get(k, {})
         n_r = nws_hours.get(k, {})
-        # ECMWF wins per field when it has a value; otherwise mean of the rest.
-        wind_e = e_r.get("wind_mph")
-        gust_e = e_r.get("gust_mph")
-        dir_e = e_r.get("wind_dir_deg")
-        wind = wind_e if wind_e is not None else _mean([o_r.get("wind_mph"), n_r.get("wind_mph")])
-        gust = gust_e if gust_e is not None else _mean([o_r.get("gust_mph"), n_r.get("gust_mph")])
-        wdir = dir_e if dir_e is not None else _circ_mean([o_r.get("wind_dir_deg"), n_r.get("wind_dir_deg")])
+        try:
+            ahead = (dt.datetime.fromisoformat(k) - now_local).total_seconds() / 3600.0
+        except ValueError:
+            ahead = 0.0
         rows.append({
             "time": k,
-            "temp_f": e_r.get("temp_f") if e_r.get("temp_f") is not None else o_r.get("temp_f"),
-            "precip_in": e_r.get("precip_in") if e_r.get("precip_in") is not None else o_r.get("precip_in"),
-            "wind_mph": wind,
-            "gust_mph": gust,
-            "wind_dir_deg": wdir,
+            # Temp/precip: HRRR best near-term, ECMWF beyond, else Open-Meteo blend.
+            "temp_f": _pick("temp_f", h_r, e_r, o_r, n_r, ahead),
+            "precip_in": _pick("precip_in", h_r, e_r, o_r, n_r, ahead),
+            "wind_mph": _pick("wind_mph", h_r, e_r, o_r, n_r, ahead),
+            "gust_mph": _pick("gust_mph", h_r, e_r, o_r, n_r, ahead),
+            "wind_dir_deg": _pick("wind_dir_deg", h_r, e_r, o_r, n_r, ahead, circ=True),
         })
 
+    primary_parts = []
+    if hrrr_ok:
+        primary_parts.append("HRRR 0-48h")
+    if ecmwf_ok:
+        primary_parts.append("ECMWF 48-168h")
+    primary_label = " + ".join(primary_parts) if primary_parts else "fallback only"
+
     return {
-        "source": "ECMWF primary" + (f" + {' + '.join(fallback_sources)}" if fallback_sources else ""),
+        "source": f"{primary_label}" + (f" + {' + '.join(fallback_sources)}" if fallback_sources else ""),
         "lat": lat, "lon": lon,
         "sources": sources,
-        "primary": "ECMWF IFS 0.25\u00b0" if ecmwf_ok else None,
+        "primary": primary_label,
         "hours": rows,
     }
