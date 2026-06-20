@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from . import ROOT
+from .html_loadout import build_boat_html, build_tackle_html
 from .html_report_ma9 import _assemble, build_html as build_desktop
 from .html_report_ma9_mobile import build_html as build_mobile
 
@@ -46,6 +47,14 @@ def main(argv: list[str] | None = None) -> int:
     mobile_html = build_mobile(today, data=data)
     mobile_path.write_text(mobile_html, encoding="utf-8")
     print(f"Wrote {mobile_path} ({mobile_path.stat().st_size:,} bytes)")
+
+    # Static reference tabs (boat loadout + tackle catalog). Read the KB only;
+    # no live data, so they're cheap to rebuild alongside the forecast.
+    out_dir = desktop_path.parent
+    for name, fn in (("boat.html", build_boat_html), ("tackle.html", build_tackle_html)):
+        p = out_dir / name
+        p.write_text(fn(), encoding="utf-8")
+        print(f"Wrote {p} ({p.stat().st_size:,} bytes)")
 
     return 0
 

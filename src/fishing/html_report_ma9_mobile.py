@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import ROOT
+from .html_loadout import LOADOUT_CSS, render_nav
 from .html_report import CSS, _h, _kind_tag
 from .html_report_ma9 import (
     CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START,
@@ -599,13 +600,14 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<meta name='apple-mobile-web-app-title' content='MA9 Fishing'>"
         "<meta name='theme-color' content='#005A9E'>"
         f"<title>MA9 \u00b7 {data['start'].strftime('%b %#d')}</title>"
-        f"<style>{CSS}{EXTRA_CSS}{MOBILE_CSS}</style></head><body>"
+        f"<style>{CSS}{EXTRA_CSS}{MOBILE_CSS}{LOADOUT_CSS}</style></head><body>"
         "<header class='m-header'>"
         "<h1>MA9 Fishing</h1>"
         f"<div class='meta'>{data['start'].strftime('%a %b %#d')} \u2013 "
         f"{data['end'].strftime('%a %b %#d')} \u00b7 updated {generated}</div>"
         "<a class='desktop-link' href='index.html'>Full desktop view \u2192</a>"
         "</header>"
+        f"{render_nav('mobile')}"
         "<section class='m-section'>"
         + _lingcod_alert_mobile(start)
         + _render_mobile_kpis(data)

@@ -41,6 +41,20 @@ def boat() -> Optional[dict]:
         return dict(r) if r else None
 
 
+def boat_specs() -> list[dict]:
+    with _conn() as c:
+        return _rows(c.execute(
+            "SELECT label, value, category, sort FROM boat_spec ORDER BY sort"
+        ))
+
+
+def boat_notes() -> list[dict]:
+    with _conn() as c:
+        return _rows(c.execute(
+            "SELECT topic, text, sort FROM boat_note ORDER BY sort"
+        ))
+
+
 # --- regulations -------------------------------------------------------------
 
 def regulations(water: str, source: str = "both") -> dict:

@@ -1,0 +1,205 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Tackle catalog</title><style>
+:root{
+  /* Brand blues */
+  --ms-blue:#0078D4; --ms-blue-dark:#106EBE; --ms-blue-darker:#005A9E;
+  --ms-cyan:#00BCF2; --ms-teal:#008272; --ms-purple:#5C2D91;
+  /* Neutrals */
+  --ms-bg:#FAF9F8; --ms-card:#FFFFFF; --ms-border:#E1DFDD; --ms-divider:#EDEBE9;
+  --ms-text:#201F1E; --ms-text-secondary:#605E5C; --ms-text-disabled:#A19F9D;
+  /* Status */
+  --ms-green:#107C10; --ms-yellow:#F2C811; --ms-orange:#D83B01; --ms-red:#A4262C;
+  /* Elevation */
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.08);
+  --shadow-md:0 3px 8px rgba(0,0,0,0.12);
+  --shadow-lg:0 6.4px 14.4px rgba(0,0,0,0.13), 0 1.2px 3.6px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI','Segoe UI Web','Segoe WP',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+     font-size:14px;line-height:1.45;color:var(--ms-text);background:var(--ms-bg)}
+
+/* Header */
+header.page{background:linear-gradient(135deg,var(--ms-blue-darker) 0%,var(--ms-blue) 60%,var(--ms-cyan) 110%);
+            color:#fff;padding:20px 32px;box-shadow:var(--shadow-md);
+            position:sticky;top:0;z-index:50}
+header.page h1{margin:0;font-size:22px;font-weight:600;display:flex;align-items:center}
+header.page .meta{margin-top:4px;font-size:13px;opacity:.92}
+.brand-logo{display:inline-grid;grid-template-columns:repeat(2,10px);gap:2px;margin-right:10px;vertical-align:middle}
+.brand-logo span{width:10px;height:10px;display:block}
+.brand-logo span:nth-child(1){background:#F25022}
+.brand-logo span:nth-child(2){background:#7FBA00}
+.brand-logo span:nth-child(3){background:#00A4EF}
+.brand-logo span:nth-child(4){background:#FFB900}
+
+/* Tab nav */
+nav.tabs{background:#fff;border-bottom:1px solid var(--ms-border);padding:0 32px;
+         position:sticky;top:64px;z-index:40;display:flex;gap:4px;overflow-x:auto;
+         box-shadow:var(--shadow-sm)}
+nav.tabs a{color:var(--ms-text-secondary);text-decoration:none;font-weight:600;font-size:13px;
+           padding:12px 14px;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a:hover{color:var(--ms-blue)}
+nav.tabs a.active{color:var(--ms-blue);border-bottom-color:var(--ms-blue)}
+
+/* Water section */
+.water{padding:24px 32px;border-bottom:1px solid var(--ms-divider)}
+.water h2{margin:0 0 4px;font-size:20px;font-weight:600;color:var(--ms-blue);
+          border-bottom:2px solid var(--ms-blue);padding-bottom:6px;display:inline-block}
+.water .sub{color:var(--ms-text-secondary);font-size:13px;margin:4px 0 16px}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+     padding:14px 16px;position:relative;box-shadow:var(--shadow-sm);overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ms-blue)}
+.kpi.green::before{background:var(--ms-green)}
+.kpi.yellow::before{background:var(--ms-yellow)}
+.kpi.orange::before{background:var(--ms-orange)}
+.kpi.red::before{background:var(--ms-red)}
+.kpi.purple::before{background:var(--ms-purple)}
+.kpi.teal::before{background:var(--ms-teal)}
+.kpi .lbl{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+          letter-spacing:.5px;font-weight:600;margin-bottom:4px}
+.kpi .val{font-size:28px;font-weight:600;color:var(--ms-text);line-height:1.1}
+.kpi .sub{font-size:12px;color:var(--ms-text-secondary);margin-top:4px}
+
+/* Grid of detail cards */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:1000px){.grid{grid-template-columns:1fr}}
+.card{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+      padding:16px 18px;box-shadow:var(--shadow-sm)}
+.card h3{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--ms-purple);
+         text-transform:uppercase;letter-spacing:.5px}
+
+/* Tables */
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+table.dt th,table.dt td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--ms-divider)}
+table.dt th{background:#F3F2F1;color:var(--ms-text-secondary);font-weight:600;font-size:12px;
+            text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0}
+table.dt tr:hover td{background:#F3F2F1}
+table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt tr:last-child td{border-bottom:none}
+
+/* Wind heatmap cells */
+.wind-cell-low{background:#DFF6DD;color:#0B6A0B;font-weight:600}
+.wind-cell-mod{background:#FFF4CE;color:#796300;font-weight:600}
+.wind-cell-high{background:#FED9B7;color:#8A2900;font-weight:600}
+.wind-cell-xhigh{background:#FDE7E9;color:#8E1F25;font-weight:700}
+
+/* Badges & tags */
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;
+       font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#fff;margin-right:6px}
+.badge.b{background:var(--ms-blue)} .badge.g{background:var(--ms-green)}
+.badge.o{background:var(--ms-orange)} .badge.r{background:var(--ms-red)}
+.badge.p{background:var(--ms-purple)} .badge.t{background:var(--ms-teal)}
+.badge.y{background:var(--ms-yellow);color:#3B2F00}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;
+     letter-spacing:.3px;margin-right:6px}
+.tag.b{background:#DEECF9;color:var(--ms-blue-darker)}
+.tag.g{background:#DFF6DD;color:#0B6A0B}
+.tag.r{background:#FDE7E9;color:#8E1F25}
+.tag.o{background:#FED9B7;color:#8A2900}
+.tag.y{background:#FFF4CE;color:#796300}
+.tag.p{background:#E8D6F2;color:#3B1854}
+
+/* Tides */
+.tide-up{color:var(--ms-blue-darker);font-weight:600}
+.tide-dn{color:var(--ms-orange);font-weight:600}
+
+/* Misc */
+.dim{color:var(--ms-text-secondary)}
+pre{background:#F3F2F1;color:var(--ms-text);padding:10px 12px;border-radius:4px;
+    overflow:auto;font-size:12px;max-height:280px;border:1px solid var(--ms-border)}
+details{margin-top:8px}
+details summary{cursor:pointer;color:var(--ms-blue);font-size:13px;font-weight:600}
+ul{margin:6px 0;padding-left:20px}
+li{margin:4px 0}
+footer{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
+       border-top:1px solid var(--ms-border);background:#fff}
+
+/* Loadout-page tweaks (boat.html + tackle.html) */
+.hero{padding:28px 32px 8px;background:linear-gradient(135deg,#004578 0%,#005A9E 55%,#0078D4 100%);
+      color:#fff}
+.hero h1{margin:0;font-size:28px;font-weight:600}
+.hero .sub{opacity:.9;margin-top:6px;font-size:14px}
+.hero .pill-row{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);
+            color:#fff;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;
+            letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px}
+.hero .pill b{font-weight:700;font-size:13px}
+
+.section-pad{padding:24px 32px}
+@media (max-width:640px){.hero{padding:20px 16px 6px} .hero h1{font-size:22px}
+  .section-pad{padding:16px}}
+
+/* Spec cards used on boat page */
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.spec{background:#fff;border:1px solid var(--ms-border);border-radius:8px;
+      padding:14px 16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.spec::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--ms-blue)}
+.spec.powertrain::before{background:#D83B01}
+.spec.trolling::before{background:#107C10}
+.spec.limits::before{background:#A4262C}
+.spec.electronics::before{background:#5C2D91}
+.spec .icon{font-size:22px;line-height:1;margin-bottom:6px}
+.spec .lbl{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+           letter-spacing:.5px;font-weight:600}
+.spec .val{font-size:17px;font-weight:600;color:var(--ms-text);margin-top:2px;line-height:1.25}
+
+.note-card{background:#fff;border:1px solid var(--ms-border);border-radius:8px;
+           padding:16px 18px;box-shadow:var(--shadow-sm);margin-bottom:12px}
+.note-card h4{margin:0 0 6px;font-size:13px;color:var(--ms-blue);
+              text-transform:uppercase;letter-spacing:.5px}
+.note-card p{margin:0;font-size:14px;line-height:1.5}
+
+.boat-svg{display:block;max-width:560px;width:100%;margin:8px auto 0}
+
+/* Tackle page */
+.use-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;padding:0;list-style:none}
+.use-filter li{background:#F3F2F1;color:var(--ms-text);padding:6px 12px;border-radius:999px;
+               font-size:12px;font-weight:600;border:1px solid var(--ms-border);
+               display:inline-flex;align-items:center;gap:6px}
+.use-filter li b{color:var(--ms-blue);font-weight:700}
+
+.use-section{margin-bottom:28px}
+.use-section h3{margin:0 0 12px;font-size:16px;color:var(--ms-text);font-weight:600;
+                display:flex;align-items:center;gap:10px;padding-bottom:6px;
+                border-bottom:2px solid var(--ms-blue)}
+.use-section h3 .count{font-size:12px;color:var(--ms-text-secondary);font-weight:500;
+                       background:#EFF6FC;color:var(--ms-blue-darker);padding:2px 10px;
+                       border-radius:999px;letter-spacing:.3px}
+
+.rod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.rod{background:#fff;border:1px solid var(--ms-border);border-radius:10px;
+     padding:16px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+     transition:box-shadow .15s ease, transform .15s ease}
+.rod:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.rod::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--ms-blue)}
+.rod[data-use="Salmon"]::before{background:#D83B01}
+.rod[data-use="Trout"]::before{background:#107C10}
+.rod[data-use="Steelhead"]::before{background:#5C2D91}
+.rod[data-use="Bottomfishing"]::before{background:#FFB900}
+.rod[data-use="All Purpose"]::before{background:#008080}
+.rod .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.rod .brand{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+            letter-spacing:.5px;font-weight:600}
+.rod .model{font-size:17px;font-weight:600;color:var(--ms-text);margin:2px 0 0;line-height:1.2}
+.rod .meta-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.rod .chip{background:#F3F2F1;color:var(--ms-text);padding:3px 9px;border-radius:4px;
+           font-size:11px;font-weight:600;letter-spacing:.2px}
+.rod .chip.type{background:#DEECF9;color:var(--ms-blue-darker)}
+.rod .chip.loc{background:#FFF4CE;color:#796300}
+.rod .chip.guest{background:#DFF6DD;color:#0B6A0B}
+.rod .chip.solo{background:#FDE7E9;color:#8E1F25}
+.rod .power-bar{margin:12px 0 8px;display:flex;align-items:center;gap:8px}
+.rod .power-bar .scale{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;height:6px}
+.rod .power-bar .scale span{background:#EDEBE9;border-radius:2px}
+.rod .power-bar .scale span.on{background:var(--ms-blue)}
+.rod .power-bar .label{font-size:11px;color:var(--ms-text-secondary);min-width:80px;text-align:right;
+                       font-weight:600}
+.rod .reel{font-size:12.5px;color:var(--ms-text-secondary);margin-top:2px}
+.rod .reel b{color:var(--ms-text);font-weight:600}
+.rod .notes{margin-top:8px;font-size:12px;color:var(--ms-text-secondary);font-style:italic}
+
+footer.fun{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
+           border-top:1px solid var(--ms-border);background:#fff;text-align:center}
+</style></head><body><header class='page'><h1><div class='brand-logo'><span></span><span></span><span></span><span></span></div>Tackle catalog</h1><div class='meta'>14 rod &amp; reel combos · updated 2026-06-20 08:44</div></header><nav class='tabs'><a class='' href='index.html'>Forecast</a><a class='' href='mobile.html'>Mobile</a><a class='' href='boat.html'>Boat</a><a class='active' href='tackle.html'>Tackle</a></nav><section class='hero'><h1>Tackle catalog &#127907;</h1><div class='sub'>Every rod, reel, and line in the rotation — organized by what we fish for.</div><div class='pill-row'><span class='pill'>Rods&nbsp;<b>14</b></span><span class='pill'>Kit value&nbsp;<b>$7,125</b></span><span class='pill'>Whidbey&nbsp;<b>6</b></span><span class='pill'>Seasonal&nbsp;<b>5</b></span><span class='pill'>Home&nbsp;<b>3</b></span></div></section><section class='section-pad'><ul class='use-filter'><li>&#127907; Salmon <b>5</b></li><li>&#127754; Steelhead <b>2</b></li><li>&#128031; Trout <b>2</b></li><li>&#9875; Bottomfishing <b>4</b></li><li>&#11088; All Purpose <b>1</b></li></ul><div class='use-section'><h3>&#127907; Salmon <span class='count'>5 rods</span></h3><div class='rod-grid'><div class='rod' data-use='Salmon'><div class='head'><div><div class='brand'>G. Loomis</div><div class='model'>IMX-Pro BC Mooch</div></div><div class='brand' style='text-align:right'>Mooching/Trolling</div></div><div class='brand' style='margin-top:2px'>IMX-PRO 1263-2 SATR BC</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>10&#x27;6&quot;</span><span class='chip'>10-30lbs</span><span class='chip'>1-6oz</span><span class='chip loc'>Seasonal</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span></div><div class='label'>Medium Heavy</div></div><div class='reel'>Reel: <b>Islander MR3</b> · Line: <b>65lb Braid</b></div><div class='notes'>“Next Level!”</div></div><div class='rod' data-use='Salmon'><div class='head'><div><div class='brand'>G. Loomis</div><div class='model'>IMX-Pro BC Mooch</div></div><div class='brand' style='text-align:right'>Mooching/Trolling</div></div><div class='brand' style='margin-top:2px'>IMX-PRO 1263-2 SATR BC</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>10&#x27;6&quot;</span><span class='chip'>10-30lbs</span><span class='chip'>1-6oz</span><span class='chip loc'>Seasonal</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span></div><div class='label'>Medium Heavy</div></div><div class='reel'>Reel: <b>Islander TR3</b> · Line: <b>65lb Braid</b></div><div class='notes'>“Next Level!”</div></div><div class='rod' data-use='Salmon'><div class='head'><div><div class='brand'>G. Loomis</div><div class='model'>GCX Salmon</div></div><div class='brand' style='text-align:right'>Trolling</div></div><div class='brand' style='margin-top:2px'>GCX 1264-2C SATR</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>10&#x27;6&quot;</span><span class='chip'>10-40lbs</span><span class='chip'>2-8oz</span><span class='chip loc'>Seasonal</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span></div><div class='label'>Heavy</div></div><div class='reel'>Reel: <b>Shimano Tekota 500</b> · Line: <b>65lb Braid</b></div><div class='notes'>“My salmon rod”</div></div><div class='rod' data-use='Salmon'><div class='head'><div><div class='brand'>Lamiglas</div><div class='model'>XCC</div></div><div class='brand' style='text-align:right'>Trolling</div></div><div class='brand' style='margin-top:2px'>XCC934GH</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>9&#x27;3&quot;</span><span class='chip'>15-30lbs</span><span class='chip'>3/4-3oz</span><span class='chip loc'>Seasonal</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span></div><div class='label'>Heavy</div></div><div class='reel'>Reel: <b>Okuma Cold Water SS</b> · Line: <b>65lb Braid</b></div><div class='notes'>“Emma&#x27;s salmon rod”</div></div><div class='rod' data-use='Salmon'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Guide Select Classic</div></div><div class='brand' style='text-align:right'>Trolling</div></div><div class='brand' style='margin-top:2px'>GSC-C-1062H-CG</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>10&#x27;6&quot;</span><span class='chip'>15-30lbs</span><span class='chip'>2-8oz</span><span class='chip loc'>Whidbey</span><span class='chip guest'>Guest-friendly</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span></div><div class='label'>Heavy</div></div><div class='reel'>Reel: <b>Okuma Cold Water SS</b> · Line: <b>65lb Braid</b></div><div class='notes'>“Guest salmon rod”</div></div></div></div><div class='use-section'><h3>&#127754; Steelhead <span class='count'>2 rods</span></h3><div class='rod-grid'><div class='rod' data-use='Steelhead'><div class='head'><div><div class='brand'>G. Loomis</div><div class='model'>IMX-Pro Steelhead</div></div><div class='brand' style='text-align:right'>Steelhead</div></div><div class='brand' style='margin-top:2px'>IMX-PRO 1201-2S STBR</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>10&#x27;</span><span class='chip'>8-12lbs</span><span class='chip'>3/8-3/4oz</span><span class='chip loc'>Home</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Medium Light</div></div><div class='reel'>Reel: <b>Shimano Vanford 3000</b> · Line: <b>30lb Braid</b></div><div class='notes'>“My steelhead rod”</div></div><div class='rod' data-use='Steelhead'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Guide Select Pro</div></div><div class='brand' style='text-align:right'>Steelhead</div></div><div class='brand' style='margin-top:2px'>GSP-S-902ML</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>9&#x27;</span><span class='chip'>6-12lbs</span><span class='chip'>3/8-3/4oz</span><span class='chip loc'>Home</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Medium Light</div></div><div class='reel'>Reel: <b>Okuma Ceymar C-30</b> · Line: <b>30lb Braid</b></div><div class='notes'>“Emma&#x27;s steelhead rod”</div></div></div></div><div class='use-section'><h3>&#128031; Trout <span class='count'>2 rods</span></h3><div class='rod-grid'><div class='rod' data-use='Trout'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Celilo</div></div><div class='brand' style='text-align:right'>Trout</div></div><div class='brand' style='margin-top:2px'>CE-S-762ULB</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>7&#x27;6&quot;</span><span class='chip'>2-6lbs</span><span class='chip'>1/32-3/8oz</span><span class='chip loc'>Whidbey</span><span class='chip guest'>Guest-friendly</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class=''></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Ultralight</div></div><div class='reel'>Reel: <b>Okuma Ceymar C-30</b> · Line: <b>20lb braid</b></div><div class='notes'>“Grandkids rod”</div></div><div class='rod' data-use='Trout'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Guide Select Pro</div></div><div class='brand' style='text-align:right'>Trout</div></div><div class='brand' style='margin-top:2px'>GSP-S-762UL</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>7&#x27;6&quot;</span><span class='chip'>2-6lbs</span><span class='chip'>1/8-1/2oz</span><span class='chip loc'>Home</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class=''></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Ultralight</div></div><div class='reel'>Reel: <b>Pflueger Supreme XT35</b> · Line: <b>20lb Braid</b></div><div class='notes'>“My trout rod”</div></div></div></div><div class='use-section'><h3>&#9875; Bottomfishing <span class='count'>4 rods</span></h3><div class='rod-grid'><div class='rod' data-use='Bottomfishing'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Celilo</div></div><div class='brand' style='text-align:right'>Pinks/General</div></div><div class='brand' style='margin-top:2px'>CE-S-862MLB</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>8&#x27;6&quot;</span><span class='chip'>6-12lbs</span><span class='chip'>3/16-1/2oz</span><span class='chip loc'>Whidbey</span><span class='chip guest'>Guest-friendly</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Medium Light</div></div><div class='reel'>Reel: <b>Okuma Ceymar C-55</b> · Line: <b>40lb Braid</b></div><div class='notes'>“Guest flounder rod”</div></div><div class='rod' data-use='Bottomfishing'><div class='head'><div><div class='brand'>G. Loomis</div><div class='model'>IMX-Pro MBR</div></div><div class='brand' style='text-align:right'>Flounder</div></div><div class='brand' style='margin-top:2px'>IMX-PRO 903C MBR</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>7&#x27;6&quot;</span><span class='chip'>10-17lbs</span><span class='chip'>1/4-3/4oz</span><span class='chip loc'>Whidbey</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span></div><div class='label'>Medium Heavy</div></div><div class='reel'>Reel: <b>Shimano Tranx 200</b> · Line: <b>40lb Braid</b></div><div class='notes'>“My flounder rod”</div></div><div class='rod' data-use='Bottomfishing'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>SST</div></div><div class='brand' style='text-align:right'>Flounder/Pinks</div></div><div class='brand' style='margin-top:2px'>SST-S-902M</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>9&#x27;</span><span class='chip'>8-17lbs</span><span class='chip'>3/8-1oz</span><span class='chip loc'>Whidbey</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span></div><div class='label'>Medium</div></div><div class='reel'>Reel: <b>Shimano Speros 4000</b> · Line: <b>40lb Braid</b></div><div class='notes'>“My flounder rod”</div></div><div class='rod' data-use='Bottomfishing'><div class='head'><div><div class='brand'>Shimano</div><div class='model'>Terez</div></div><div class='brand' style='text-align:right'>Halibut/Lingcod</div></div><div class='brand' style='margin-top:2px'>TZCX70MH</div><div class='meta-row'><span class='chip type'>Casting</span><span class='chip'>7&#x27;</span><span class='chip'>40-80lbs</span><span class='chip loc'>Seasonal</span><span class='chip solo'>Personal</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class='on'></span><span class='on'></span><span class=''></span></div><div class='label'>Medium Heavy</div></div><div class='reel'>Reel: <b>Shimano Tekota 600</b> · Line: <b>65lb Braid</b></div><div class='notes'>“My Halibut rod”</div></div></div></div><div class='use-section'><h3>&#11088; All Purpose <span class='count'>1 rod</span></h3><div class='rod-grid'><div class='rod' data-use='All Purpose'><div class='head'><div><div class='brand'>Okuma</div><div class='model'>Celilo</div></div><div class='brand' style='text-align:right'>Pinks/General</div></div><div class='brand' style='margin-top:2px'>CE-S-962MLB</div><div class='meta-row'><span class='chip type'>Spinning</span><span class='chip'>9&#x27;6&quot;</span><span class='chip'>6-12lbs</span><span class='chip'>1/4-1/2oz</span><span class='chip loc'>Whidbey</span></div><div class='power-bar'><div class='scale'><span class='on'></span><span class='on'></span><span class=''></span><span class=''></span><span class=''></span></div><div class='label'>Medium Light</div></div><div class='reel'>Reel: <b>Okuma Ceymar C-55</b> · Line: <b>40lb Braid</b></div><div class='notes'>“Flounder, Pinks, etc”</div></div></div></div></section><footer class='fun'>Pulled from Fishing Gear.xlsx · edit that file and rerun <code>python -m fishing.build_kb</code> to update.</footer></body></html>

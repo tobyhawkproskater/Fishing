@@ -27,6 +27,8 @@ def _build_sqlite(db_path: Path, kf, gear_wb, current, proposed) -> None:
         """
         CREATE TABLE place (name TEXT PRIMARY KEY, address TEXT);
         CREATE TABLE boat (year INTEGER, make TEXT, model TEXT, name TEXT);
+        CREATE TABLE boat_spec (label TEXT, value TEXT, category TEXT, sort INTEGER);
+        CREATE TABLE boat_note (topic TEXT, text TEXT, sort INTEGER);
 
         CREATE TABLE gear (
             use TEXT, purpose TEXT, brand TEXT, model TEXT, type TEXT,
@@ -53,6 +55,12 @@ def _build_sqlite(db_path: Path, kf, gear_wb, current, proposed) -> None:
         if kf.boat:
             c.execute("INSERT INTO boat VALUES (?, ?, ?, ?)",
                       (kf.boat.year, kf.boat.make, kf.boat.model, kf.boat.name))
+        for s in getattr(kf, "boat_specs", []) or []:
+            c.execute("INSERT INTO boat_spec VALUES (?, ?, ?, ?)",
+                      (s.label, s.value, s.category, s.sort))
+        for n in getattr(kf, "boat_notes", []) or []:
+            c.execute("INSERT INTO boat_note VALUES (?, ?, ?)",
+                      (n.topic, n.text, n.sort))
 
     gear_cols = ["Use", "Purpose", "Brand", "Model", "Type", "Number",
                  "Cost (rod and reel)", "Length", "Power", "Taper",

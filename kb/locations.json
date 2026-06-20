@@ -14,5 +14,53 @@
     "make": "Boston Whaler",
     "model": "160 Dauntless",
     "name": "the Barnacle"
-  }
+  },
+  "boat_specs": [
+    {
+      "label": "Main outboard",
+      "value": "2006 Mercury 115 HP four stroke",
+      "category": "powertrain",
+      "sort": 0
+    },
+    {
+      "label": "Kicker",
+      "value": "2025 Mercury 6 HP",
+      "category": "powertrain",
+      "sort": 1
+    },
+    {
+      "label": "Downriggers",
+      "value": "Scotty 2106 downriggers",
+      "category": "trolling",
+      "sort": 2
+    },
+    {
+      "label": "Wind limit",
+      "value": "12-15MPH",
+      "category": "limits",
+      "sort": 3
+    }
+  ],
+  "boat_notes": [
+    {
+      "topic": "Mooring & tender access",
+      "text": "Boat is moored on a mooring buoy right out in front of our cabin, on the sand when the tide is at a +1 or lower. I have a 10’ Sorenson rowing dinghy or a paddleboard I use to get out to the boat when it’s time to fish, but tides matter for sure.",
+      "sort": 0
+    },
+    {
+      "topic": "Local tide stations",
+      "text": "Speaking of tides, I’m on the North end of Maxwelton Beach, which is the southern part of Useless Bay. There are not official tides tables for Useless Bay so I usually refer to Glendale, or Hansville.",
+      "sort": 1
+    },
+    {
+      "topic": "Home waters & refueling",
+      "text": "For Fishing, I generally fish in Marine Area 9, but sometimes go to Marine Area 10 when there are more things open. It’s fairly easy for me to get to Edmonds, Kingston, Mutiny Bay. I usually refuel at the Port Ludlow marina.",
+      "sort": 2
+    },
+    {
+      "topic": "Wind limits",
+      "text": "Wind is critical for me. Anything over 12-15 MPH is generally a no-go. The boat is very seaworthy, but it’s just too sketchy. I have a subscription to the Windy app, which I rely on for wind data.",
+      "sort": 3
+    }
+  ]
 }

@@ -49,6 +49,7 @@ from . import ROOT, kb
 from .distance import haversine_km
 from .stations import PLACES, WATERS
 from .weather import ndbc_latest, noaa_tides, nws_marine_forecast, open_meteo, wind_blend
+from .html_loadout import LOADOUT_CSS, render_nav
 from .html_report import (
     CSS, _deg_to_compass, _fmt, _h, _kind_tag, _render_buoy,
     _render_rules, _render_tides, _group_tides_by_day, _wind_cell_class,
@@ -1067,7 +1068,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'>"
         f"<title>MA9 Fishability {data['start']} \u2013 {data['end']}</title>"
-        f"<style>{CSS}{EXTRA_CSS}</style></head><body>"
+        f"<style>{CSS}{EXTRA_CSS}{LOADOUT_CSS}</style></head><body>"
         "<header class='page'>"
         "<h1><div class='brand-logo'>"
         "<span></span><span></span><span></span><span></span>"
@@ -1077,6 +1078,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         f"\u00b7 <a href='mobile.html' style='color:#fff;text-decoration:underline'>"
         f"Mobile view \u2192</a></div>"
         "</header>"
+        f"{render_nav('forecast')}"
         f"<section class='water' id='ma9'>"
         f"<h2>{_h(w.name)}</h2>"
         f"<div class='sub'>{sub}</div>"
