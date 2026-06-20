@@ -1,17 +1,15 @@
-"""Boat loadout + tackle catalog HTML pages (responsive, desktop + mobile).
+"""Fishing gear catalog page (responsive, desktop + mobile).
 
-These are static reference tabs in the fishing-report site: they read from
-the SQLite KB only and don't fetch any live data, so they're cheap to
-rebuild on every CI run alongside the forecast.
+A static reference tab in the fishing-report site: reads from the SQLite
+KB only and doesn't fetch any live data, so it's cheap to rebuild on every
+CI run alongside the forecast.
 
 Run:
-    python -m fishing.html_loadout boat docs/boat.html
-    python -m fishing.html_loadout tackle docs/tackle.html
+    python -m fishing.html_loadout gear docs/gear.html
 """
 from __future__ import annotations
 
 import datetime as dt
-import html
 import re
 import sys
 from collections import OrderedDict, defaultdict
@@ -25,10 +23,9 @@ from .html_report import CSS, _h
 # --- shared nav -------------------------------------------------------------
 
 NAV_LINKS = [
-    ("Forecast", "index.html", "forecast"),
-    ("Mobile",   "mobile.html", "mobile"),
-    ("Boat",     "boat.html",   "boat"),
-    ("Tackle",   "tackle.html", "tackle"),
+    ("Forecast",     "index.html",  "forecast"),
+    ("Mobile",       "mobile.html", "mobile"),
+    ("Fishing Gear", "gear.html",   "gear"),
 ]
 
 
@@ -41,10 +38,10 @@ def render_nav(active: str) -> str:
     return f"<nav class='tabs'>{''.join(items)}</nav>"
 
 
-# --- loadout-specific CSS (extends CSS from html_report.py) ----------------
+# --- gear-page CSS (extends CSS from html_report.py) ----------------------
 
 LOADOUT_CSS = """
-/* Loadout-page tweaks (boat.html + tackle.html) */
+/* Gear-page tweaks (gear.html) */
 .hero{padding:28px 32px 8px;background:linear-gradient(135deg,#004578 0%,#005A9E 55%,#0078D4 100%);
       color:#fff}
 .hero h1{margin:0;font-size:28px;font-weight:600}
@@ -59,29 +56,6 @@ LOADOUT_CSS = """
 @media (max-width:640px){.hero{padding:20px 16px 6px} .hero h1{font-size:22px}
   .section-pad{padding:16px}}
 
-/* Spec cards used on boat page */
-.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.spec{background:#fff;border:1px solid var(--ms-border);border-radius:8px;
-      padding:14px 16px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
-.spec::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--ms-blue)}
-.spec.powertrain::before{background:#D83B01}
-.spec.trolling::before{background:#107C10}
-.spec.limits::before{background:#A4262C}
-.spec.electronics::before{background:#5C2D91}
-.spec .icon{font-size:22px;line-height:1;margin-bottom:6px}
-.spec .lbl{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
-           letter-spacing:.5px;font-weight:600}
-.spec .val{font-size:17px;font-weight:600;color:var(--ms-text);margin-top:2px;line-height:1.25}
-
-.note-card{background:#fff;border:1px solid var(--ms-border);border-radius:8px;
-           padding:16px 18px;box-shadow:var(--shadow-sm);margin-bottom:12px}
-.note-card h4{margin:0 0 6px;font-size:13px;color:var(--ms-blue);
-              text-transform:uppercase;letter-spacing:.5px}
-.note-card p{margin:0;font-size:14px;line-height:1.5}
-
-.boat-svg{display:block;max-width:560px;width:100%;margin:8px auto 0}
-
-/* Tackle page */
 .use-filter{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;padding:0;list-style:none}
 .use-filter li{background:#F3F2F1;color:var(--ms-text);padding:6px 12px;border-radius:999px;
                font-size:12px;font-weight:600;border:1px solid var(--ms-border);
@@ -135,18 +109,6 @@ footer.fun{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
 
 # --- helpers ---------------------------------------------------------------
 
-_SPEC_ICONS = {
-    "powertrain": "&#9881;",   # gear
-    "trolling":   "&#9875;",   # anchor (downrigger stand-in)
-    "limits":     "&#9888;",   # warning
-    "electronics":"&#128268;", # plug
-}
-
-
-def _spec_icon(category: str) -> str:
-    return _SPEC_ICONS.get(category, "&#128737;")  # toolbox fallback
-
-
 _POWER_RANK_RE = re.compile(r"^\s*(\d)")
 _POWER_LABELS = {
     1: "Ultralight", 2: "Medium-Light", 3: "Medium",
@@ -160,7 +122,6 @@ def _power_rank(power: Optional[str]) -> tuple[int, str]:
         return (0, "")
     m = _POWER_RANK_RE.match(power)
     rank = int(m.group(1)) if m else 0
-    # Friendly label from the trailing text, falling back to ours.
     rest = power.strip().split(" ", 1)
     label = rest[1].strip() if len(rest) > 1 else _POWER_LABELS.get(rank, "")
     if rank == 4 and label.lower() == "heavy":
@@ -182,164 +143,7 @@ def _power_bar(rank: int, label: str) -> str:
     )
 
 
-# --- Boat outline SVG (Microsoft Fluent strokes) ---------------------------
-
-_BOAT_SVG = """
-<svg class='boat-svg' viewBox='0 0 560 200' xmlns='http://www.w3.org/2000/svg' aria-label='Boston Whaler 160 Dauntless outline'>
-  <defs>
-    <linearGradient id='hull' x1='0' x2='0' y1='0' y2='1'>
-      <stop offset='0' stop-color='#DEECF9'/>
-      <stop offset='1' stop-color='#A0CFF0'/>
-    </linearGradient>
-    <linearGradient id='water' x1='0' x2='0' y1='0' y2='1'>
-      <stop offset='0' stop-color='#EFF6FC'/>
-      <stop offset='1' stop-color='#C7E0F4'/>
-    </linearGradient>
-  </defs>
-  <!-- water -->
-  <rect x='0' y='150' width='560' height='50' fill='url(#water)'/>
-  <path d='M0 160 Q 70 152 140 160 T 280 160 T 420 160 T 560 160 V200 H0 Z' fill='#B4D8EE' opacity='.7'/>
-  <!-- hull -->
-  <path d='M40 150 L80 110 L470 110 Q 510 110 525 130 L 540 150 Z'
-        fill='url(#hull)' stroke='#005A9E' stroke-width='2.5' stroke-linejoin='round'/>
-  <!-- rub rail -->
-  <line x1='75' y1='118' x2='520' y2='118' stroke='#004578' stroke-width='1.5'/>
-  <!-- console -->
-  <rect x='260' y='62' width='80' height='50' rx='5' fill='#fff' stroke='#005A9E' stroke-width='2'/>
-  <rect x='270' y='72' width='60' height='22' rx='2' fill='#107C10' opacity='.85'/>
-  <!-- t-top frame -->
-  <line x1='265' y1='62' x2='250' y2='30' stroke='#605E5C' stroke-width='2'/>
-  <line x1='335' y1='62' x2='350' y2='30' stroke='#605E5C' stroke-width='2'/>
-  <rect x='235' y='22' width='130' height='10' rx='3' fill='#605E5C'/>
-  <!-- bow rails -->
-  <path d='M120 110 Q 130 70 175 70 L 235 70' fill='none' stroke='#605E5C' stroke-width='2'/>
-  <!-- main outboard -->
-  <rect x='470' y='90' width='34' height='60' rx='4' fill='#201F1E' stroke='#000' stroke-width='1.5'/>
-  <rect x='478' y='100' width='18' height='10' rx='1' fill='#D83B01'/>
-  <text x='487' y='123' text-anchor='middle' font-family='Segoe UI' font-size='9' font-weight='700' fill='#fff'>115</text>
-  <!-- kicker -->
-  <rect x='430' y='108' width='22' height='40' rx='3' fill='#404040' stroke='#000' stroke-width='1'/>
-  <text x='441' y='133' text-anchor='middle' font-family='Segoe UI' font-size='8' font-weight='700' fill='#fff'>6</text>
-  <!-- downrigger booms -->
-  <line x1='370' y1='105' x2='420' y2='75' stroke='#107C10' stroke-width='2.5'/>
-  <line x1='380' y1='105' x2='430' y2='80' stroke='#107C10' stroke-width='2.5'/>
-  <circle cx='420' cy='75' r='3' fill='#FFB900' stroke='#000' stroke-width='.7'/>
-  <circle cx='430' cy='80' r='3' fill='#FFB900' stroke='#000' stroke-width='.7'/>
-  <!-- bow eye -->
-  <circle cx='55' cy='140' r='3' fill='#605E5C'/>
-</svg>
-"""
-
-
-# --- Boat page -------------------------------------------------------------
-
-def build_boat_html() -> str:
-    boat = kb.boat() or {}
-    specs = kb.boat_specs()
-    notes = kb.boat_notes()
-    places = kb.places()
-
-    by_cat: dict[str, list[dict]] = defaultdict(list)
-    for s in specs:
-        by_cat[s.get("category") or "other"].append(s)
-
-    name = boat.get("name") or "the boat"
-    headline = " ".join(str(x) for x in
-                        (boat.get("year"), boat.get("make"), boat.get("model")) if x)
-
-    pill = lambda lbl, val: f"<span class='pill'>{lbl}&nbsp;<b>{_h(val)}</b></span>"
-    pills: list[str] = []
-    for s in specs:
-        if s["label"] == "Main outboard":
-            pills.append(pill("Main", s["value"]))
-        elif s["label"] == "Kicker":
-            pills.append(pill("Kicker", s["value"]))
-        elif s["label"] == "Downriggers":
-            pills.append(pill("Downriggers", "Scotty 2106"))
-        elif s["label"] == "Wind limit":
-            pills.append(pill("Wind ceiling", s["value"]))
-
-    def spec_card(s: dict) -> str:
-        cat = s.get("category") or "other"
-        return (
-            f"<div class='spec {_h(cat)}'>"
-            f"<div class='icon'>{_spec_icon(cat)}</div>"
-            f"<div class='lbl'>{_h(s['label'])}</div>"
-            f"<div class='val'>{_h(s['value'])}</div>"
-            "</div>"
-        )
-
-    # Group cards by category for visual rhythm
-    cat_order = ["powertrain", "trolling", "limits", "electronics", "other"]
-    cat_titles = {
-        "powertrain": "Powertrain",
-        "trolling": "Trolling rig",
-        "limits": "Operating limits",
-        "electronics": "Electronics",
-        "other": "Other",
-    }
-    spec_sections = []
-    for cat in cat_order:
-        items = by_cat.get(cat) or []
-        if not items:
-            continue
-        cards = "".join(spec_card(s) for s in items)
-        spec_sections.append(
-            f"<div class='card'><h3>{_h(cat_titles[cat])}</h3>"
-            f"<div class='spec-grid'>{cards}</div></div>"
-        )
-
-    note_cards = "".join(
-        f"<div class='note-card'><h4>{_h(n['topic'])}</h4>"
-        f"<p>{_h(n['text'])}</p></div>"
-        for n in notes
-    )
-
-    place_chips = " ".join(
-        f"<span class='chip loc'>{_h(p['name'])}: {_h(p['address'])}</span>"
-        for p in places
-    )
-    if place_chips:
-        place_card = (
-            "<div class='card'><h3>Home base</h3>"
-            f"<div style='display:flex;flex-wrap:wrap;gap:8px'>{place_chips}</div>"
-            "</div>"
-        )
-    else:
-        place_card = ""
-
-    generated = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    return (
-        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
-        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-        f"<title>{_h(name)} \u2014 Boat loadout</title>"
-        f"<style>{CSS}{LOADOUT_CSS}</style></head><body>"
-        "<header class='page'>"
-        "<h1><div class='brand-logo'>"
-        "<span></span><span></span><span></span><span></span>"
-        f"</div>Boat \u2014 {_h(name)}</h1>"
-        f"<div class='meta'>{_h(headline)} \u00b7 updated {generated}</div>"
-        "</header>"
-        f"{render_nav('boat')}"
-        "<section class='hero'>"
-        f"<h1>{_h(name.title())} \u2728</h1>"
-        f"<div class='sub'>{_h(headline)} \u00b7 center-console powerboat \u00b7 home-moored at Mill Beach</div>"
-        f"<div class='pill-row'>{''.join(pills)}</div>"
-        f"{_BOAT_SVG}"
-        "</section>"
-        "<section class='section-pad'>"
-        f"<div class='grid'>{''.join(spec_sections)}{place_card}</div>"
-        "<h2 style='margin:28px 0 12px;color:var(--ms-blue);font-size:18px'>Captain's notes</h2>"
-        f"{note_cards}"
-        "</section>"
-        "<footer class='fun'>Pulled from Key facts.docx \u00b7 edit that file and rerun "
-        "<code>python -m fishing.build_kb</code> to update.</footer>"
-        "</body></html>"
-    )
-
-
-# --- Tackle page -----------------------------------------------------------
+# --- Gear page -------------------------------------------------------------
 
 # Order of Use categories on the page (others fall through alphabetical).
 _USE_ORDER = ["Salmon", "Steelhead", "Trout", "Bottomfishing", "All Purpose"]
@@ -405,7 +209,7 @@ def _rod_card(r: dict) -> str:
     )
 
 
-def build_tackle_html() -> str:
+def build_gear_html() -> str:
     rods = kb.gear() or []
     # Filter out the trailing totals row if it slipped through (no brand/model).
     rods = [r for r in rods if (r.get("brand") or r.get("model"))]
@@ -452,17 +256,17 @@ def build_tackle_html() -> str:
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-        "<title>Tackle catalog</title>"
+        "<title>Fishing Gear</title>"
         f"<style>{CSS}{LOADOUT_CSS}</style></head><body>"
         "<header class='page'>"
         "<h1><div class='brand-logo'>"
         "<span></span><span></span><span></span><span></span>"
-        "</div>Tackle catalog</h1>"
+        "</div>Fishing Gear</h1>"
         f"<div class='meta'>{len(rods)} rod &amp; reel combos \u00b7 updated {generated}</div>"
         "</header>"
-        f"{render_nav('tackle')}"
+        f"{render_nav('gear')}"
         "<section class='hero'>"
-        "<h1>Tackle catalog &#127907;</h1>"
+        "<h1>Fishing Gear &#127907;</h1>"
         "<div class='sub'>Every rod, reel, and line in the rotation \u2014 organized by what we fish for.</div>"
         f"<div class='pill-row'>{''.join(pills)}</div>"
         "</section>"
@@ -480,26 +284,18 @@ def build_tackle_html() -> str:
 
 def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
-    if not argv:
-        print("Usage: python -m fishing.html_loadout {boat|tackle} [out.html]")
-        return 2
-    target = argv[0].lower()
-    if target == "boat":
-        html_text = build_boat_html()
-        default_name = "boat.html"
-    elif target == "tackle":
-        html_text = build_tackle_html()
-        default_name = "tackle.html"
-    else:
-        print(f"Unknown target: {target}")
+    if argv and argv[0].lower() != "gear":
+        print(f"Unknown target: {argv[0]}")
+        print("Usage: python -m fishing.html_loadout gear [out.html]")
         return 2
 
+    html_text = build_gear_html()
     if len(argv) >= 2:
         out = Path(argv[1])
     else:
         reports = ROOT / "reports"
         reports.mkdir(exist_ok=True)
-        out = reports / default_name
+        out = reports / "gear.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html_text, encoding="utf-8")
     print(f"Wrote {out} ({out.stat().st_size:,} bytes)")
