@@ -23,7 +23,7 @@ windows on the per-day tide wave):
     RED     slack window, but wind > 15 mph OR gust >= 20 mph
     OFF     outside the slack window
 
-A separate per-day wind badge (GLASS / BREEZY / BLOWN) summarizes the
+A separate per-day wind badge (GLASS / BREEZY / WINDY) summarizes the
 daylight wind character so glass-calm days are obvious at a glance.
 
 Slack is approximated by the nearest predicted high/low at Hansville
@@ -72,7 +72,7 @@ WATER_KEY = "ma9"
 #   2. Category in {GREEN, YELLOW, RED, OFF} -- slack window + wind tiers.
 #      Used only to highlight slack segments on the per-day tide wave SVG.
 #
-# A separate day-level wind badge (GLASS / BREEZY / BLOWN) signals whether
+# A separate day-level wind badge (GLASS / BREEZY / WINDY) signals whether
 # the whole day is fishable regardless of tide phase.
 
 CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF = "green", "yellow", "red", "off"
@@ -198,7 +198,7 @@ def _day_wind_badge(row: dict) -> tuple[str, str]:
 
     Bands (max across daylight cells):
       GLASS   max wind <= 7 mph AND max gust < 10 mph
-      BLOWN   max wind > 15 mph OR max gust >= 25 mph
+      WINDY   max wind > 15 mph OR max gust >= 25 mph
       BREEZY  everything in between
     """
     cells = row.get("cells") or []
@@ -209,7 +209,7 @@ def _day_wind_badge(row: dict) -> tuple[str, str]:
     if max_w <= 7 and max_g < 10:
         return ("GLASS", "glass")
     if max_w > 15 or max_g >= 25:
-        return ("BLOWN", "blown")
+        return ("WINDY", "windy")
     return ("BREEZY", "breezy")
 
 
@@ -412,7 +412,7 @@ EXTRA_CSS = """
                        font-variant-numeric:tabular-nums;z-index:2}
 .day-badge.glass{background:#DFF6DD;color:#0B6A0B;border-color:#92C593}
 .day-badge.breezy{background:#FFF4CE;color:#5C4400;border-color:#E8C77A}
-.day-badge.blown{background:#FED9B7;color:#8A2900;border-color:#E89F70}
+.day-badge.windy{background:#FED9B7;color:#8A2900;border-color:#E89F70}
 """
 
 
@@ -510,8 +510,8 @@ def _render_top_kpis(data: dict) -> str:
     best_overall = windows[0] if windows else None
 
     ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.85)
-    blown = sum(1 for row in data["grid"] for c in row["cells"]
-                if c.get("wind_score", 1.0) == 0 and c["in_slack"])
+    windy_hrs = sum(1 for row in data["grid"] for c in row["cells"]
+                    if c.get("wind_score", 1.0) == 0 and c["in_slack"])
 
     def _fmt_window(w: Optional[dict]) -> tuple[str, str]:
         if not w:
@@ -530,8 +530,8 @@ def _render_top_kpis(data: dict) -> str:
         ("green",  "Best Today",       today_val,   today_sub),
         ("",       "Best This Week",   overall_val, overall_sub),
         ("purple", "Ideal Hours (7d)", str(ideal_hours), "score \u2265 0.85"),
-        ("red" if blown else "",
-                   "Blown-Out Hours",  str(blown), "gust \u2265 25 mph in slack"),
+        ("red" if windy_hrs else "",
+                   "Windy Hours",  str(windy_hrs), "gust \u2265 25 mph in slack"),
     ]
     cells = []
     for cls, lbl, val, sub in kpis:
@@ -1099,7 +1099,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "gust because flat water is what matters); tiers &lt;12 / &lt;18 / "
         "&lt;25 / \u226525 mph. GREEN tide-curve overlay = slack window with calm wind. "
         "PRIME marker = slack with gust \u226410 &amp; wind \u22647. Per-day badge: "
-        "<b>GLASS</b> (max wind \u22647 &amp; gust \u226410), <b>BLOWN</b> (max wind &gt;15 "
+        "<b>GLASS</b> (max wind \u22647 &amp; gust \u226410), <b>WINDY</b> (max wind &gt;15 "
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "

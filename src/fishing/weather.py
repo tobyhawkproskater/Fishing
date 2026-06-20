@@ -369,13 +369,16 @@ def nws_gridpoints_hourly(lat: float, lon: float, hours: int = 168) -> dict:
 # --- Blended wind forecast --------------------------------------------------
 
 def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
-    """Wind forecast with HRRR primary 0-48h, ECMWF primary 48-168h.
+    """Wind forecast: HRRR + ECMWF 50/50 mean for 0-48h, ECMWF primary 48-168h.
 
     Source waterfall, applied per-hour and per-field:
-      1. HRRR (NOAA 3km CONUS) for forecast hours <= 48 when available
-         - the highest-resolution model that resolves Puget Sound microclimate
-           (Olympic rain shadow, Strait outflow, convergence zones).
-      2. ECMWF IFS 0.25\u00b0 (global) for the rest of the week.
+      1. Mean of HRRR (NOAA 3km CONUS) + ECMWF IFS 0.25\u00b0 for hours <= 48.
+         HRRR resolves Puget Sound microclimate but tends to run hot on
+         sustained afternoon onshore wind; ECMWF (what Windy shows by
+         default) under-resolves microclimate but is well-calibrated on the
+         basin-mean. The 50/50 mean splits the difference and tracks the
+         user's field reference (Windy) more closely.
+      2. ECMWF IFS 0.25\u00b0 for hours 48-168.
       3. Mean of GFS + ICON (Open-Meteo) + NWS gridpoints fills any gap.
     Direction uses circular mean when falling back.
 
@@ -404,10 +407,13 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         fallback_sources.append("NWS gridpoints")
 
     sources: list[str] = []
-    if hrrr_ok:
-        sources.append("NOAA HRRR 3 km (primary 0-48 h)")
-    if ecmwf_ok:
+    if hrrr_ok and ecmwf_ok:
+        sources.append("HRRR + ECMWF 50/50 mean (primary 0-48 h)")
         sources.append("ECMWF IFS 0.25\u00b0 (primary 48-168 h)")
+    elif hrrr_ok:
+        sources.append("NOAA HRRR 3 km (primary 0-48 h)")
+    elif ecmwf_ok:
+        sources.append("ECMWF IFS 0.25\u00b0 (primary)")
     sources.extend(f"{s} (fallback)" for s in fallback_sources)
 
     def _mean(vals: list[Optional[float]]) -> Optional[float]:
@@ -439,6 +445,18 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
 
     def _pick(field: str, h_r: dict, e_r: dict, o_r: dict, n_r: dict,
               hours_ahead: float, circ: bool = False) -> Optional[float]:
+        # 0-48 h: prefer the mean of HRRR + ECMWF (matches Windy's ECMWF view
+        # while keeping HRRR's microclimate signal). Fall back to whichever
+        # single primary is available.
+        if hours_ahead <= 48 and hrrr_ok and ecmwf_ok:
+            hv = h_r.get(field)
+            ev = e_r.get(field)
+            if hv is not None and ev is not None:
+                return _circ_mean([hv, ev]) if circ else (hv + ev) / 2.0
+            if hv is not None:
+                return hv
+            if ev is not None:
+                return ev
         if hrrr_ok and hours_ahead <= 48 and h_r.get(field) is not None:
             return h_r[field]
         if ecmwf_ok and e_r.get(field) is not None:
@@ -468,10 +486,13 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         })
 
     primary_parts = []
-    if hrrr_ok:
-        primary_parts.append("HRRR 0-48h")
-    if ecmwf_ok:
+    if hrrr_ok and ecmwf_ok:
+        primary_parts.append("HRRR+ECMWF mean 0-48h")
         primary_parts.append("ECMWF 48-168h")
+    elif hrrr_ok:
+        primary_parts.append("HRRR 0-48h")
+    elif ecmwf_ok:
+        primary_parts.append("ECMWF")
     primary_label = " + ".join(primary_parts) if primary_parts else "fallback only"
 
     return {

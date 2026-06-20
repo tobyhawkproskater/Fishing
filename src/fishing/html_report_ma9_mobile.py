@@ -409,7 +409,7 @@ body{margin:0;background:var(--ms-bg);font-family:var(--font-base);color:var(--m
 .m-day-hd .pill.dim{background:#F3F2F1;color:#605E5C}
 .m-day-hd .pill.glass{background:#DFF6DD;color:#0B6A0B;border:1px solid #92C593}
 .m-day-hd .pill.breezy{background:#FFF4CE;color:#5C4400;border:1px solid #E8C77A}
-.m-day-hd .pill.blown{background:#FED9B7;color:#8A2900;border:1px solid #E89F70}
+.m-day-hd .pill.windy{background:#FED9B7;color:#8A2900;border:1px solid #E89F70}
 
 footer{padding:18px var(--m-pad) 28px;font-size:11px;color:var(--ms-text-secondary);
        text-align:center}
@@ -623,7 +623,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). Wind tiers on "
         "effective wind (0.65\u00d7wind + 0.35\u00d7gust, sustained weighted heavier): "
         "&lt;12 / &lt;18 / &lt;25 / \u226525 mph. Day badge: <b>GLASS</b> (max wind \u22647, "
-        "gust \u226410), <b>BLOWN</b> (wind &gt;15 or gust \u226525), <b>BREEZY</b> in "
+        "gust \u226410), <b>WINDY</b> (wind &gt;15 or gust \u226525), <b>BREEZY</b> in "
         "between.</div>"
         "<div>Tide curve color matches the heatmap tier: "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, "
