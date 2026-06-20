@@ -182,13 +182,6 @@ def _power_bar(rank: int, label: str) -> str:
     )
 
 
-def _fmt_money(v) -> str:
-    try:
-        return f"${int(round(v)):,}"
-    except (TypeError, ValueError):
-        return "&mdash;"
-
-
 # --- Boat outline SVG (Microsoft Fluent strokes) ---------------------------
 
 _BOAT_SVG = """
@@ -424,7 +417,6 @@ def build_tackle_html() -> str:
         u = r.get("use") or "Other"
         by_use.setdefault(u, []).append(r)
 
-    total_value = sum((r.get("cost") or 0) for r in rods)
     by_loc = defaultdict(int)
     for r in rods:
         by_loc[r.get("location") or "Other"] += 1
@@ -432,7 +424,6 @@ def build_tackle_html() -> str:
     pill = lambda lbl, val: f"<span class='pill'>{lbl}&nbsp;<b>{_h(val)}</b></span>"
     pills = [
         pill("Rods", str(len(rods))),
-        pill("Kit value", _fmt_money(total_value)),
     ] + [pill(loc, str(n)) for loc, n in sorted(by_loc.items(), key=lambda x: -x[1])]
 
     filter_items = "".join(
