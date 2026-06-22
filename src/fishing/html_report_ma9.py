@@ -767,14 +767,14 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         for t, v, kind in best_moments:
             hr_f = t.hour + t.minute / 60.0
             cx = x_of(hr_f)
-            # PRIME upgrade: glass-calm slack (gust <= 10 AND wind <= 7 at the
-            # nearest hour). Paint the marker in Microsoft gold with a halo so
-            # the truly stand-out windows leap off the page.
+            # Glass-calm flag: nearest hour cell has gust <= 10 AND wind <= 7.
+            # Visual only — the badge LABEL is driven by the heatmap score tier
+            # so it can never contradict the cell color underneath.
             slack_hr = int(round(hr_f))
             slack_cell = next(
                 (c for c in cells if c["hour"] == slack_hr), None
             )
-            prime = bool(
+            glass = bool(
                 slack_cell
                 and (slack_cell.get("gust_mph") or 0) <= 10
                 and (slack_cell.get("wind_mph") or 0) <= 7
@@ -785,9 +785,15 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 if isinstance(score_val, (int, float)) and score_val > 0
                 else ""
             )
+            tier_name = (
+                _tier(score_val)
+                if isinstance(score_val, (int, float))
+                else None
+            )
+            tier_label = "PRIME" if tier_name == "prime" else "GOOD"
 
-            if prime:
-                # Soft gold vertical band behind the green stroke.
+            if glass:
+                # Soft gold vertical band behind the stroke — flags glass-calm.
                 band_w = max(8.0, IW / 24.0 * 0.55)
                 parts.append(
                     f"<rect x='{cx - band_w/2:.1f}' y='{PT}' width='{band_w:.1f}' "
@@ -799,7 +805,6 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 )
                 badge_fill = "#FFB900"
                 badge_text = "#3B2F00"
-                label = f"\u2605 PRIME {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 PRIME {_fmt_clock(t)}"
                 badge_h = 18
                 font_sz = 11
             else:
@@ -807,17 +812,28 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                     f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT}' y2='{PT + IH}' "
                     f"stroke='#107C10' stroke-width='1.4' stroke-dasharray='5,3' opacity='0.9'/>"
                 )
-                badge_fill = "#107C10"
+                badge_fill = "#107C10" if tier_name == "good" else "#054B05"
                 badge_text = "#FFFFFF"
-                label = f"\u2605 GOOD {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 GOOD {_fmt_clock(t)}"
                 badge_h = 15
                 font_sz = 10
+
+            label = (
+                f"\u2605 {tier_label} {score_str} {_fmt_clock(t)}"
+                if score_str
+                else f"\u2605 {tier_label} {_fmt_clock(t)}"
+            )
 
             # Above the chart frame, on a dedicated shelf between the score
             # strip (y=32) and the chart top (y=PT=78).
             badge_y = 50
             text_w = 8 + len(label) * 6
-            bx = max(PL + 2, min(cx - text_w / 2, PL + IW - text_w - 2))
+            # If glass-calm, reserve room for the GLASS pill to the right.
+            pill_text = "GLASS"
+            pill_w = 8 + len(pill_text) * 6 if glass else 0
+            pill_gap = 4 if glass else 0
+            group_w = text_w + pill_gap + pill_w
+            gx = max(PL + 2, min(cx - group_w / 2, PL + IW - group_w - 2))
+            bx = gx
             parts.append(
                 f"<rect x='{bx:.1f}' y='{badge_y:.1f}' width='{text_w}' height='{badge_h}' "
                 f"rx='3' fill='{badge_fill}'/>"
@@ -827,6 +843,21 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 f"text-anchor='middle' font-size='{font_sz}' font-weight='700' "
                 f"fill='{badge_text}'>{label}</text>"
             )
+            if glass:
+                # Compact gold "GLASS" pill rides alongside the main badge so
+                # the wind/gust glass-calm flag is named explicitly.
+                px = bx + text_w + pill_gap
+                pill_h = badge_h
+                parts.append(
+                    f"<rect x='{px:.1f}' y='{badge_y:.1f}' width='{pill_w}' "
+                    f"height='{pill_h}' rx='{pill_h/2:.1f}' fill='#FFB900' "
+                    f"stroke='#D29200' stroke-width='0.8'/>"
+                )
+                parts.append(
+                    f"<text x='{px + pill_w/2:.1f}' y='{badge_y + pill_h - 4:.1f}' "
+                    f"text-anchor='middle' font-size='10' font-weight='800' "
+                    f"fill='#3B2F00'>{pill_text}</text>"
+                )
 
     # Tide H/L markers for this day. Label position flips above/below the dot
     # when it would otherwise clip the frame edge or collide with the hour axis.
@@ -981,13 +1012,14 @@ def _render_daily_charts(data: dict) -> str:
         "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
         "Tide curve color = score tier (Prime/Good/Marginal/Poor)</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
-        "border-radius:3px;background:#107C10;color:#fff;text-align:center;font-size:10px;"
+        "border-radius:3px;background:#054B05;color:#fff;text-align:center;font-size:10px;"
         "line-height:14px;vertical-align:middle;margin-right:6px'>\u2605</span>"
-        "<strong>GOOD</strong> &mdash; predicted slack tide inside a Prime or Good span</span>"
-        "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
-        "border-radius:3px;background:#FFB900;color:#3B2F00;text-align:center;font-size:11px;"
-        "line-height:14px;font-weight:700;vertical-align:middle;margin-right:6px'>\u2605</span>"
-        "<strong>PRIME</strong> &mdash; glass-calm slack (gust \u226410 mph &amp; wind \u22647 mph)</span>"
+        "<strong>PRIME / GOOD</strong> &mdash; predicted slack tide, labeled by the heatmap tier of the slack hour</span>"
+        "<span><span class='swatch' style='display:inline-block;width:32px;height:14px;"
+        "border-radius:7px;background:#FFB900;border:1px solid #D29200;color:#3B2F00;"
+        "text-align:center;font-size:10px;line-height:14px;font-weight:800;vertical-align:middle;"
+        "margin-right:6px'>GLASS</span>"
+        "glass-calm slack (gust \u226410 mph &amp; wind \u22647 mph) &mdash; gold band &amp; pill flag the standout windows</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
         "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
         "Hourly fishability score (above frame)</span>"
@@ -1076,7 +1108,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         + "</div>"
     )
 
-    generated = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    generated = dt.datetime.now().strftime("%Y-%m-%d %#I:%M %p")
 
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"

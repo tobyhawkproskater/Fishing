@@ -181,7 +181,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             cx = x_of(hr_f)
             slack_hr = int(round(hr_f))
             slack_cell = next((c for c in cells if c["hour"] == slack_hr), None)
-            prime = bool(
+            glass = bool(
                 slack_cell
                 and (slack_cell.get("gust_mph") or 0) <= 10
                 and (slack_cell.get("wind_mph") or 0) <= 7
@@ -192,7 +192,14 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 if isinstance(score_val, (int, float)) and score_val > 0
                 else ""
             )
-            if prime:
+            tier_name = (
+                _tier(score_val)
+                if isinstance(score_val, (int, float))
+                else None
+            )
+            tier_label = "PRIME" if tier_name == "prime" else "GOOD"
+
+            if glass:
                 band_w = max(10.0, IW / 24.0 * 0.6)
                 parts.append(
                     f"<rect x='{cx - band_w/2:.1f}' y='{PT}' width='{band_w:.1f}' "
@@ -203,20 +210,29 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"stroke='#D29200' stroke-width='2.5' opacity='0.95'/>"
                 )
                 badge_fill, badge_text = "#FFB900", "#3B2F00"
-                label = f"\u2605 PRIME {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 PRIME {_fmt_clock(t)}"
                 badge_h, font_sz = 22, 14
             else:
                 parts.append(
                     f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT}' y2='{PT + IH}' "
                     f"stroke='#107C10' stroke-width='1.8' stroke-dasharray='6,3' opacity='0.9'/>"
                 )
-                badge_fill, badge_text = "#107C10", "#FFFFFF"
-                label = f"\u2605 GOOD {score_str} {_fmt_clock(t)}" if score_str else f"\u2605 GOOD {_fmt_clock(t)}"
+                badge_fill = "#107C10" if tier_name == "good" else "#054B05"
+                badge_text = "#FFFFFF"
                 badge_h, font_sz = 19, 12
+
+            label = (
+                f"\u2605 {tier_label} {score_str} {_fmt_clock(t)}"
+                if score_str
+                else f"\u2605 {tier_label} {_fmt_clock(t)}"
+            )
 
             badge_y = 54
             text_w = 12 + len(label) * 7
-            bx = max(PL + 2, min(cx - text_w / 2, PL + IW - text_w - 2))
+            pill_text = "GLASS"
+            pill_w = 12 + len(pill_text) * 7 if glass else 0
+            pill_gap = 5 if glass else 0
+            group_w = text_w + pill_gap + pill_w
+            bx = max(PL + 2, min(cx - group_w / 2, PL + IW - group_w - 2))
             parts.append(
                 f"<rect x='{bx:.1f}' y='{badge_y:.1f}' width='{text_w}' height='{badge_h}' "
                 f"rx='3' fill='{badge_fill}'/>"
@@ -226,6 +242,18 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 f"text-anchor='middle' font-size='{font_sz}' font-weight='700' "
                 f"fill='{badge_text}'>{label}</text>"
             )
+            if glass:
+                px = bx + text_w + pill_gap
+                parts.append(
+                    f"<rect x='{px:.1f}' y='{badge_y:.1f}' width='{pill_w}' "
+                    f"height='{badge_h}' rx='{badge_h/2:.1f}' fill='#FFB900' "
+                    f"stroke='#D29200' stroke-width='1'/>"
+                )
+                parts.append(
+                    f"<text x='{px + pill_w/2:.1f}' y='{badge_y + badge_h - 5:.1f}' "
+                    f"text-anchor='middle' font-size='12' font-weight='800' "
+                    f"fill='#3B2F00'>{pill_text}</text>"
+                )
 
     # Tide H/L markers
     for t, v, kind in events_dt:

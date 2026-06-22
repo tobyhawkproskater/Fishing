@@ -299,11 +299,23 @@ def _render_daily_table(daily: list[dict]) -> str:
 def _render_tides(tides_by_day: dict[str, list[dict]]) -> str:
     if not tides_by_day:
         return "<p class='dim'>No tide data.</p>"
+
+    def _fmt12(iso_hhmm: str) -> str:
+        # Convert "HH:MM" (24-hour) to a 12-hour label like "5:24p".
+        try:
+            hh, mm = iso_hhmm.split(":", 1)
+            h, m = int(hh), int(mm)
+            h12 = h % 12 or 12
+            suffix = "a" if h < 12 else "p"
+            return f"{h12}:{m:02d}{suffix}"
+        except (ValueError, IndexError):
+            return iso_hhmm
+
     rows = []
     for day in sorted(tides_by_day)[:DAYS]:
         cells = []
         for t in tides_by_day[day]:
-            time = (t.get("t") or "")[11:16]
+            time = _fmt12((t.get("t") or "")[11:16])
             kind = t.get("type")
             v = t.get("v")
             cls = "tide-up" if kind == "H" else "tide-dn"
@@ -489,7 +501,7 @@ def build_html(start: Optional[dt.date] = None,
         f"<a href='#{w.key}'>{_h(w.name.split(' (')[0])}</a>" for w in waters
     )
     end = start + dt.timedelta(days=DAYS - 1)
-    generated = dt.datetime.now().strftime("%Y-%m-%d %H:%M %Z").strip()
+    generated = dt.datetime.now().strftime("%Y-%m-%d %#I:%M %p %Z").strip()
 
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
