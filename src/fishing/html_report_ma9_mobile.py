@@ -622,7 +622,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "land at ~0.4 (Marginal). Tide half-window scales with the adjacent "
         "swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). Wind score = "
         "worse of two tiers \u2014 sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust "
-        "&lt;20/&lt;25/&lt;30/\u226530 mph \u2014 mapped to 1.0/0.7/0.3/0.0. "
+        "&lt;15/&lt;20/&lt;25/\u226530 mph \u2014 mapped to 1.0/0.7/0.3/0.0. "
         "Day badge: <b>GLASS</b> (max wind \u22647, "
         "gust \u226410), <b>WINDY</b> (wind &gt;15 or gust \u226525), <b>BREEZY</b> in "
         "between.</div>"

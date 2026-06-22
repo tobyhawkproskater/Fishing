@@ -8,11 +8,11 @@ where
     wind_score   = min of two tier scores (the worse wins, so a calm-but-
                    gusty hour can't be mislabeled Prime):
                      sustained:  <10 / <15 / <25 / >=25 mph -> 1.0/0.7/0.3/0.0
-                     gust:       <20 / <25 / <30 / >=30 mph -> 1.0/0.7/0.3/0.0
+                     gust:       <15 / <20 / <25 / >=30 mph -> 1.0/0.7/0.3/0.0
                    Sustained ceiling matches `_classify`'s GREEN cutoff so
                    a PRIME heatmap cell never sits above a YELLOW/RED tide
                    curve. Gust thresholds run higher because gust naturally
-                   exceeds sustained; a single 18-mph puff over glass water
+                   exceeds sustained; a brief puff to 14 mph over glass water
                    still scores 1.0.
     precip_score = 1.0 if <0.05 in/h, else 0.5
 
@@ -173,18 +173,18 @@ def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float]) -> float:
     # to align with `_classify` (heatmap PRIME requires the same wind/gust
     # ceiling as a GREEN tide-curve segment).
     #   Sustained:  <10 / <15 / <25 / >=25 mph -> 1.0 / 0.7 / 0.3 / 0.0
-    #   Gust:       <20 / <25 / <30 / >=30 mph -> 1.0 / 0.7 / 0.3 / 0.0
+    #   Gust:       <15 / <20 / <25 / >=30 mph -> 1.0 / 0.7 / 0.3 / 0.0
     # Gust thresholds run higher than sustained because gust naturally exceeds
-    # sustained; a brief puff to 18 mph shouldn't tank a glass-water hour.
+    # sustained; a brief puff to 14 mph shouldn't tank a glass-water hour.
     w = wind_mph if wind_mph is not None else 0.0
     g = gust_mph if gust_mph is not None else w
     if w < 10:   sw = 1.0
     elif w < 15: sw = 0.7
     elif w < 25: sw = 0.3
     else:        sw = 0.0
-    if g < 20:   gw = 1.0
-    elif g < 25: gw = 0.7
-    elif g < 30: gw = 0.3
+    if g < 15:   gw = 1.0
+    elif g < 20: gw = 0.7
+    elif g < 25: gw = 0.3
     else:        gw = 0.0
     return min(sw, gw)
 
@@ -1109,7 +1109,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "\u00b145 min before-window, a 4 ft rise out gives a generous \u00b13 hr "
         "after-window. Thresholds: &lt;3 ft = 6 hr, 3\u20136 = 3 hr, 6\u20139 = 90 min, "
         "\u22659 ft = 45 min. wind_score takes the worse of two tiers \u2014 "
-        "sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust &lt;20/&lt;25/&lt;30/\u226530 mph "
+        "sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust &lt;15/&lt;20/&lt;25/\u226530 mph "
         "\u2014 mapped to 1.0/0.7/0.3/0.0 so a calm-but-gusty hour can't earn "
         "Prime. GREEN tide-curve overlay = slack window with calm wind. "
         "PRIME marker = slack with gust \u226410 &amp; wind \u22647. Per-day badge: "
