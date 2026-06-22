@@ -174,10 +174,13 @@ def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float]) -> float:
     # ceiling as a GREEN tide-curve segment).
     #   Sustained:  <10 / <15 / <25 / >=25 mph -> 1.0 / 0.7 / 0.3 / 0.0
     #   Gust:       <15 / <20 / <25 / >=30 mph -> 1.0 / 0.7 / 0.3 / 0.0
-    # Gust thresholds run higher than sustained because gust naturally exceeds
-    # sustained; a brief puff to 14 mph shouldn't tank a glass-water hour.
-    w = wind_mph if wind_mph is not None else 0.0
-    g = gust_mph if gust_mph is not None else w
+    # Round to whole mph FIRST so the score matches the displayed gust value
+    # (a gust of 14.6 is shown as "15" in tooltips and must score as 15, not
+    # sneak under the <15 threshold as 14.6).
+    w_raw = wind_mph if wind_mph is not None else 0.0
+    g_raw = gust_mph if gust_mph is not None else w_raw
+    w = int(round(w_raw))
+    g = int(round(g_raw))
     if w < 10:   sw = 1.0
     elif w < 15: sw = 0.7
     elif w < 25: sw = 0.3
