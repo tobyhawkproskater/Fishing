@@ -198,8 +198,11 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 else None
             )
             tier_label = "PRIME" if tier_name == "prime" else "GOOD"
+            # Gold + GLASS pill ONLY when glass-calm AND Prime tier — see
+            # html_report_ma9.py for the rationale.
+            gold = glass and tier_name == "prime"
 
-            if glass:
+            if gold:
                 band_w = max(10.0, IW / 24.0 * 0.6)
                 parts.append(
                     f"<rect x='{cx - band_w/2:.1f}' y='{PT}' width='{band_w:.1f}' "
@@ -229,8 +232,8 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             badge_y = 54
             text_w = 12 + len(label) * 7
             pill_text = "GLASS"
-            pill_w = 12 + len(pill_text) * 7 if glass else 0
-            pill_gap = 5 if glass else 0
+            pill_w = 12 + len(pill_text) * 7 if gold else 0
+            pill_gap = 5 if gold else 0
             group_w = text_w + pill_gap + pill_w
             bx = max(PL + 2, min(cx - group_w / 2, PL + IW - group_w - 2))
             parts.append(
@@ -242,7 +245,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 f"text-anchor='middle' font-size='{font_sz}' font-weight='700' "
                 f"fill='{badge_text}'>{label}</text>"
             )
-            if glass:
+            if gold:
                 px = bx + text_w + pill_gap
                 parts.append(
                     f"<rect x='{px:.1f}' y='{badge_y:.1f}' width='{pill_w}' "

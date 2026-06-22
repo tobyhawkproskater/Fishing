@@ -794,9 +794,15 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 else None
             )
             tier_label = "PRIME" if tier_name == "prime" else "GOOD"
+            # Gold treatment is reserved for the STANDOUT combo: glass-calm
+            # AND Prime tier. A glass-calm slack whose nearest hour cell only
+            # scores GOOD (e.g. big-swing slack with tight ±45 min window
+            # where the cell sits 13 min off slack) gets the normal green
+            # badge — gold would over-promise.
+            gold = glass and tier_name == "prime"
 
-            if glass:
-                # Soft gold vertical band behind the stroke — flags glass-calm.
+            if gold:
+                # Soft gold vertical band behind the stroke — flags glass-calm Prime.
                 band_w = max(8.0, IW / 24.0 * 0.55)
                 parts.append(
                     f"<rect x='{cx - band_w/2:.1f}' y='{PT}' width='{band_w:.1f}' "
@@ -830,10 +836,11 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
             # strip (y=32) and the chart top (y=PT=78).
             badge_y = 50
             text_w = 8 + len(label) * 6
-            # If glass-calm, reserve room for the GLASS pill to the right.
+            # GLASS pill rides with the gold treatment — both flag the same
+            # standout combo (glass-calm AND Prime tier).
             pill_text = "GLASS"
-            pill_w = 8 + len(pill_text) * 6 if glass else 0
-            pill_gap = 4 if glass else 0
+            pill_w = 8 + len(pill_text) * 6 if gold else 0
+            pill_gap = 4 if gold else 0
             group_w = text_w + pill_gap + pill_w
             gx = max(PL + 2, min(cx - group_w / 2, PL + IW - group_w - 2))
             bx = gx
@@ -846,7 +853,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 f"text-anchor='middle' font-size='{font_sz}' font-weight='700' "
                 f"fill='{badge_text}'>{label}</text>"
             )
-            if glass:
+            if gold:
                 # Compact gold "GLASS" pill rides alongside the main badge so
                 # the wind/gust glass-calm flag is named explicitly.
                 px = bx + text_w + pill_gap
@@ -1022,7 +1029,7 @@ def _render_daily_charts(data: dict) -> str:
         "border-radius:7px;background:#FFB900;border:1px solid #D29200;color:#3B2F00;"
         "text-align:center;font-size:10px;line-height:14px;font-weight:800;vertical-align:middle;"
         "margin-right:6px'>GLASS</span>"
-        "glass-calm slack (gust \u226410 mph &amp; wind \u22647 mph) &mdash; gold band &amp; pill flag the standout windows</span>"
+        "glass-calm slack at a Prime cell (gust \u226410 mph &amp; wind \u22647 mph &amp; cell score \u22650.9) &mdash; gold treatment flags the standout windows</span>"
         "<span><span class='swatch' style='display:inline-block;width:14px;height:10px;"
         "background:#107C10;vertical-align:middle;margin-right:6px'></span>"
         "Hourly fishability score (above frame)</span>"
@@ -1146,8 +1153,11 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "\u22659 ft = 45 min. wind_score takes the worse of two tiers \u2014 "
         "sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust &lt;15/&lt;20/&lt;25/\u226530 mph "
         "\u2014 mapped to 1.0/0.7/0.3/0.0 so a calm-but-gusty hour can't earn "
-        "Prime. GREEN tide-curve overlay = slack window with calm wind. "
-        "PRIME marker = slack with gust \u226410 &amp; wind \u22647. Per-day badge: "
+        "Prime. Slack-tide chart badge label always matches the heatmap tier "
+        "(PRIME if cell \u22650.9, else GOOD) so the chart and the cell can't "
+        "disagree. Gold badge + GLASS pill = slack with gust \u226410 &amp; "
+        "wind \u22647 AND the cell scores Prime \u2014 the standout combo. "
+        "Per-day badge: "
         "<b>GLASS</b> (max wind \u22647 &amp; gust \u226410), <b>WINDY</b> (max wind &gt;15 "
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
