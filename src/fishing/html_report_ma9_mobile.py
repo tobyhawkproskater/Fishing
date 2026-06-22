@@ -118,13 +118,13 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         }
 
         def _tier(score: float):
-            if score >= 0.85:
+            if score >= 0.9:
                 return "prime"
-            if score >= 0.45:
+            if score >= 0.75:
                 return "good"
-            if score >= 0.25:
+            if score >= 0.5:
                 return "marginal"
-            if score > 0.0:
+            if score >= 0.25:
                 return "poor"
             return "terrible"
 
@@ -425,11 +425,11 @@ def _peak_hour_summary(row: dict) -> tuple[str, str]:
     prime = (peak["category"] == CAT_GREEN
              and (peak.get("gust_mph") or 0) <= 10
              and (peak.get("wind_mph") or 0) <= 7)
-    if prime and peak["score"] >= 0.85:
+    if prime and peak["score"] >= 0.9:
         tier = "prime"
-    elif peak["score"] >= 0.85:
+    elif peak["score"] >= 0.9:
         tier = "great"
-    elif peak["score"] >= 0.65:
+    elif peak["score"] >= 0.75:
         tier = "good"
     elif peak["score"] > 0:
         tier = "meh"
@@ -445,12 +445,12 @@ def _render_mobile_kpis(data: dict) -> str:
                      key=lambda w: w["quality"], default=None)
     best_overall = windows[0] if windows else None
 
-    ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.85)
+    ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.9)
     prime_count = 0
     for row in data["grid"]:
         for c in row["cells"]:
             if (c["category"] == CAT_GREEN and (c.get("gust_mph") or 0) <= 10
-                    and (c.get("wind_mph") or 0) <= 7 and c["score"] >= 0.85):
+                    and (c.get("wind_mph") or 0) <= 7 and c["score"] >= 0.9):
                 prime_count += 1
                 break  # one per day max
 
@@ -471,14 +471,14 @@ def _render_mobile_kpis(data: dict) -> str:
     today_val, today_sub = _fmt_window(best_today)
     overall_val, overall_sub = _fmt_window(best_overall)
 
-    today_cls = "good" if best_today and best_today["peak_score"] >= 0.65 else ""
-    overall_cls = ("prime" if prime_count > 0 and best_overall and best_overall["peak_score"] >= 0.85
-                   else ("good" if best_overall and best_overall["peak_score"] >= 0.85 else ""))
+    today_cls = "good" if best_today and best_today["peak_score"] >= 0.75 else ""
+    overall_cls = ("prime" if prime_count > 0 and best_overall and best_overall["peak_score"] >= 0.9
+                   else ("good" if best_overall and best_overall["peak_score"] >= 0.75 else ""))
 
     kpis = [
         (today_cls,   "Best Today",      today_val,   today_sub),
         (overall_cls, "Best 7 Days",     overall_val, overall_sub),
-        ("good" if ideal_hours else "",  "Ideal Hrs",   str(ideal_hours), "score \u22650.85"),
+        ("good" if ideal_hours else "",  "Ideal Hrs",   str(ideal_hours), "score \u22650.9"),
         ("prime" if prime_count else "", "PRIME days",  str(prime_count), "glass-calm slack"),
     ]
     cells = []
@@ -504,7 +504,7 @@ def _render_mobile_windows(windows: list[dict], limit: int = 6) -> str:
         tide_str = (f"near {w['tide_kind']} {w['tide_time']}"
                     if w.get("tide_kind") else "")
         why = f"{tide_str} \u00b7 gust {w['max_gust']:.0f} mph \u00b7 {w['avg_temp']:.0f}\u00b0F"
-        cls = "prime" if w["peak_score"] >= 0.85 and w.get("max_gust", 99) <= 10 else ""
+        cls = "prime" if w["peak_score"] >= 0.9 and w.get("max_gust", 99) <= 10 else ""
         items.append(
             f"<div class='m-window {cls}'><div>"
             f"<div class='when'>{date} \u00b7 {s}\u2013{e}</div>"

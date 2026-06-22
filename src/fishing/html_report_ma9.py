@@ -230,10 +230,10 @@ def _day_wind_badge(row: dict) -> tuple[str, str]:
 def _score_cell_class(score: float) -> tuple[str, str]:
     """Continuous score -> (background, foreground) for heatmap cells.
     Tiers: Prime / Good / Marginal / Poor / Terrible (green -> red gradient)."""
-    if score >= 0.85: return ("#107C10", "#FFFFFF")  # Prime     - saturated green
-    if score >= 0.45: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
-    if score >= 0.25: return ("#FFF4CE", "#5C4400")  # Marginal  - yellow
-    if score > 0.0:   return ("#FED9B7", "#8A2900")  # Poor      - orange
+    if score >= 0.9:  return ("#107C10", "#FFFFFF")  # Prime     - saturated green
+    if score >= 0.75: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
+    if score >= 0.5:  return ("#FFF4CE", "#5C4400")  # Marginal  - yellow
+    if score >= 0.25: return ("#FED9B7", "#8A2900")  # Poor      - orange
     return ("#A4262C", "#FFFFFF")                    # Terrible  - red
 
 
@@ -322,7 +322,7 @@ def _assemble(start: dt.date) -> dict:
             row["cells"].append(cell)
 
             # Best-windows leaderboard = runs of hours with usable score.
-            if score >= 0.45:
+            if score >= 0.75:
                 run.append(cell)
             else:
                 if run:
@@ -484,7 +484,7 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
     header = "<tr><th class='label'>Day</th>" + hour_headers + "</tr>"
     legend = (
         "<div class='legend'>"
-        "<span><span class='sw' style='background:#107C10'></span>Prime (\u22650.85)</span>"
+        "<span><span class='sw' style='background:#107C10'></span>Prime (\u22650.9)</span>"
         "<span><span class='sw' style='background:#DFF6DD'></span>Good</span>"
         "<span><span class='sw' style='background:#FFF4CE'></span>Marginal</span>"
         "<span><span class='sw' style='background:#FED9B7'></span>Poor</span>"
@@ -523,7 +523,7 @@ def _render_top_kpis(data: dict) -> str:
                      key=lambda w: w["quality"], default=None)
     best_overall = windows[0] if windows else None
 
-    ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.85)
+    ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.9)
     windy_hrs = sum(1 for row in data["grid"] for c in row["cells"]
                     if c.get("wind_score", 1.0) == 0 and c["in_slack"])
 
@@ -543,7 +543,7 @@ def _render_top_kpis(data: dict) -> str:
     kpis = [
         ("green",  "Best Today",       today_val,   today_sub),
         ("",       "Best This Week",   overall_val, overall_sub),
-        ("purple", "Ideal Hours (7d)", str(ideal_hours), "score \u2265 0.85"),
+        ("purple", "Ideal Hours (7d)", str(ideal_hours), "score \u2265 0.9"),
         ("red" if windy_hrs else "",
                    "Windy Hours",  str(windy_hrs), "gust \u2265 25 mph in slack"),
     ]
@@ -701,13 +701,13 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         }
 
         def _tier(score: float) -> Optional[str]:
-            if score >= 0.85:
+            if score >= 0.9:
                 return "prime"
-            if score >= 0.45:
+            if score >= 0.75:
                 return "good"
-            if score >= 0.25:
+            if score >= 0.5:
                 return "marginal"
-            if score > 0.0:
+            if score >= 0.25:
                 return "poor"
             return "terrible"
 
