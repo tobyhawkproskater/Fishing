@@ -369,25 +369,23 @@ def nws_gridpoints_hourly(lat: float, lon: float, hours: int = 168) -> dict:
 # --- Blended wind forecast --------------------------------------------------
 
 def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
-    """Wind forecast: HRRR + ECMWF 50/50 mean for 0-48h, ECMWF primary 48-168h.
+    """Wind forecast: 80% HRRR + 20% ECMWF for 0-24h, ECMWF only for 24h+.
 
     Source waterfall, applied per-hour and per-field:
-      1. Mean of HRRR (NOAA 3km CONUS) + ECMWF IFS 0.25\u00b0 for hours <= 48.
-         HRRR resolves Puget Sound microclimate but tends to run hot on
-         sustained afternoon onshore wind; ECMWF (what Windy shows by
-         default) under-resolves microclimate but is well-calibrated on the
-         basin-mean. The 50/50 mean splits the difference and tracks the
-         user's field reference (Windy) more closely.
-      2. ECMWF IFS 0.25\u00b0 for hours 48-168.
+      1. Weighted mean (0.8 * HRRR + 0.2 * ECMWF) for hours <= 24. HRRR
+         (NOAA 3 km CONUS) resolves Puget Sound microclimate; the small
+         ECMWF share keeps the basin-mean from drifting on convergence days.
+         Beyond 24 h HRRR's skill collapses, so the blend hands off.
+      2. ECMWF IFS 0.25\u00b0 for hours 24-168 (what Windy shows by default).
       3. Mean of GFS + ICON (Open-Meteo) + NWS gridpoints fills any gap.
-    Direction uses circular mean when falling back.
+    Direction uses circular mean (weighted in the blend region).
 
     Returns the same row shape as `open_meteo`, with `sources` listing the
     feeds that contributed and the role each played.
     """
     import math
 
-    hrrr = open_meteo_multi(lat, lon, hours=min(hours, 48), models=("gfs_hrrr",))
+    hrrr = open_meteo_multi(lat, lon, hours=min(hours, 24), models=("gfs_hrrr",))
     ecmwf = open_meteo_multi(lat, lon, hours=hours, models=("ecmwf_ifs025",))
     others = open_meteo_multi(lat, lon, hours=hours,
                               models=("gfs_seamless", "icon_seamless"))
@@ -408,10 +406,10 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
 
     sources: list[str] = []
     if hrrr_ok and ecmwf_ok:
-        sources.append("HRRR + ECMWF 50/50 mean (primary 0-48 h)")
-        sources.append("ECMWF IFS 0.25\u00b0 (primary 48-168 h)")
+        sources.append("HRRR 80% + ECMWF 20% weighted blend (primary 0-24 h)")
+        sources.append("ECMWF IFS 0.25\u00b0 (primary 24-168 h)")
     elif hrrr_ok:
-        sources.append("NOAA HRRR 3 km (primary 0-48 h)")
+        sources.append("NOAA HRRR 3 km (primary 0-24 h)")
     elif ecmwf_ok:
         sources.append("ECMWF IFS 0.25\u00b0 (primary)")
     sources.extend(f"{s} (fallback)" for s in fallback_sources)
@@ -428,12 +426,21 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         cx = sum(math.cos(r) for r in rads) / len(rads)
         return (math.degrees(math.atan2(sx, cx)) + 360.0) % 360.0
 
+    def _circ_wmean(pairs: list[tuple[Optional[float], float]]) -> Optional[float]:
+        # Weighted circular mean: each (deg, weight) contributes weight*unit_vec.
+        items = [(math.radians(d), w) for d, w in pairs if d is not None and w > 0]
+        if not items:
+            return None
+        sx = sum(math.sin(r) * w for r, w in items)
+        cx = sum(math.cos(r) * w for r, w in items)
+        return (math.degrees(math.atan2(sx, cx)) + 360.0) % 360.0
+
     # If every source failed, fall through to single-model Open-Meteo so the
     # report still renders rather than throwing.
     if not (hrrr_ok or ecmwf_ok or fallback_sources):
         return open_meteo(lat, lon, hours=hours)
 
-    # Determine "now" so we can decide HRRR-eligible hours (<=48h ahead). Time
+    # Determine "now" so we can decide HRRR-eligible hours (<=24h ahead). Time
     # keys are local Pacific naive strings ("YYYY-MM-DDTHH:00"); compare in
     # local naive time.
     try:
@@ -445,19 +452,21 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
 
     def _pick(field: str, h_r: dict, e_r: dict, o_r: dict, n_r: dict,
               hours_ahead: float, circ: bool = False) -> Optional[float]:
-        # 0-48 h: prefer the mean of HRRR + ECMWF (matches Windy's ECMWF view
-        # while keeping HRRR's microclimate signal). Fall back to whichever
-        # single primary is available.
-        if hours_ahead <= 48 and hrrr_ok and ecmwf_ok:
+        # 0-24 h: 80/20 weighted HRRR/ECMWF mean (HRRR resolves microclimate;
+        # ECMWF anchors the basin-mean). Fall back to whichever single primary
+        # is available if one is missing.
+        if hours_ahead <= 24 and hrrr_ok and ecmwf_ok:
             hv = h_r.get(field)
             ev = e_r.get(field)
             if hv is not None and ev is not None:
-                return _circ_mean([hv, ev]) if circ else (hv + ev) / 2.0
+                if circ:
+                    return _circ_wmean([(hv, 0.8), (ev, 0.2)])
+                return 0.8 * hv + 0.2 * ev
             if hv is not None:
                 return hv
             if ev is not None:
                 return ev
-        if hrrr_ok and hours_ahead <= 48 and h_r.get(field) is not None:
+        if hrrr_ok and hours_ahead <= 24 and h_r.get(field) is not None:
             return h_r[field]
         if ecmwf_ok and e_r.get(field) is not None:
             return e_r[field]
@@ -487,10 +496,10 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
 
     primary_parts = []
     if hrrr_ok and ecmwf_ok:
-        primary_parts.append("HRRR+ECMWF mean 0-48h")
-        primary_parts.append("ECMWF 48-168h")
+        primary_parts.append("HRRR 80% + ECMWF 20% blend 0-24h")
+        primary_parts.append("ECMWF 24-168h")
     elif hrrr_ok:
-        primary_parts.append("HRRR 0-48h")
+        primary_parts.append("HRRR 0-24h")
     elif ecmwf_ok:
         primary_parts.append("ECMWF")
     primary_label = " + ".join(primary_parts) if primary_parts else "fallback only"
