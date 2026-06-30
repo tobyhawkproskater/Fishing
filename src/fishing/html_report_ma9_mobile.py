@@ -22,6 +22,7 @@ from .html_report import CSS, _h, _kind_tag
 from .html_report_ma9 import (
     CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START,
     _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
+    _window_heart,
 )
 
 
@@ -29,7 +30,8 @@ from .html_report_ma9 import (
 
 def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                                hours_raw: list[dict],
-                               events_dt: list[tuple[dt.datetime, float, str]]) -> str:
+                               events_dt: list[tuple[dt.datetime, float, str]],
+                               tide_events: list[dict]) -> str:
     """Portrait-friendly SVG: same data layers as desktop, larger type."""
     W, H = 600, 320
     PL, PR, PT, PB = 40, 40, 78, 40
@@ -166,27 +168,47 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 f"stroke-width='{sw}' stroke-linecap='round'/>"
             )
 
-        spans = [(lo, hi) for tier, lo, hi in tier_spans if tier in ("prime", "good")]
+        # Tide-change windows = contiguous runs of GREEN (Prime OR Good) cells,
+        # merged across the Prime/Good boundary so a slack sitting on the Good
+        # side still anchors the whole productive run (mirrors desktop).
+        spans: list[tuple[float, float]] = []
+        _run_lo: Optional[float] = None
+        _prev_h: Optional[int] = None
+        for c in cells_sorted:
+            if c["score"] >= 0.75:
+                if _run_lo is None:
+                    _run_lo = c["hour"] - 0.5
+                _prev_h = c["hour"]
+            elif _run_lo is not None and _prev_h is not None:
+                spans.append((_run_lo, _prev_h + 0.5))
+                _run_lo = None
+        if _run_lo is not None and _prev_h is not None:
+            spans.append((_run_lo, _prev_h + 0.5))
 
-        # Best-moment markers (and PRIME upgrade)
-        best_moments: list[tuple[dt.datetime, float, str]] = []
+        # One pill per green window that contains a predicted slack, anchored on
+        # the score-weighted center-of-mass (heart of the bite) — matches desktop.
+        windows_with_slack: list[tuple[float, float]] = []
+        seen_spans: set[tuple[float, float]] = set()
         for t, v, kind in events_dt:
             if t.date() != day_date:
                 continue
             hr_f = t.hour + t.minute / 60.0
-            if any(lo <= hr_f <= hi for lo, hi in spans):
-                best_moments.append((t, v, kind))
-        for t, v, kind in best_moments:
-            hr_f = t.hour + t.minute / 60.0
-            cx = x_of(hr_f)
-            slack_hr = int(round(hr_f))
-            slack_cell = next((c for c in cells if c["hour"] == slack_hr), None)
+            span = next(((lo, hi) for lo, hi in spans if lo <= hr_f <= hi), None)
+            if span and span not in seen_spans:
+                seen_spans.add(span)
+                windows_with_slack.append(span)
+
+        for lo, hi in windows_with_slack:
+            best = _window_heart(lo, hi, day_date, cells, tide_events)
+            if best is None:
+                continue
+            t, score_val, peak_cell = best
+            cx = x_of(t.hour + t.minute / 60.0)
             glass = bool(
-                slack_cell
-                and (slack_cell.get("gust_mph") or 0) <= 10
-                and (slack_cell.get("wind_mph") or 0) <= 7
+                peak_cell
+                and (peak_cell.get("gust_mph") or 0) <= 10
+                and (peak_cell.get("wind_mph") or 0) <= 7
             )
-            score_val = (slack_cell or {}).get("score")
             score_str = (
                 f"{score_val:.2f}".lstrip("0")
                 if isinstance(score_val, (int, float)) and score_val > 0
@@ -607,7 +629,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
             if wind_label else ""
         )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
-        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt)
+        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"])
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"
