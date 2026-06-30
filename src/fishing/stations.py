@@ -46,7 +46,7 @@ WATERS: dict[str, Water] = {
         lat=47.97, lon=-122.65,
         nws_zone="PZZ133",
         tide_station="9445526",        # Hansville (north Kitsap, mouth of Admiralty Inlet)
-        ndbc_buoys=("BUSW1", "SISW1"), # Bush Point, Smith Island
+        ndbc_buoys=("SISW1", "WPOW1"), # Smith Island + West Point (BUSW1 feed is retired)
         aliases=("marine area 9", "admiralty", "admiralty inlet"),
     ),
     "ma10": Water(

@@ -40,6 +40,21 @@ def main(argv: list[str] | None = None) -> int:
 
     data = _assemble(today)
 
+    # A report with no tide data is worse than a stale one: with tide_score
+    # forced to 0, every hour collapses to the mid-cycle floor (a flat ~0.40
+    # heatmap with no Prime tiers, no colored tide curves, and no qualifying
+    # windows). This happens when NOAA CO-OPS times out (e.g. 504) and the
+    # Seattle fallback also fails. Abort WITHOUT writing so the last good
+    # report stays published instead of being clobbered by a useless one.
+    if not data.get("tide_events"):
+        err = data.get("tides_error") or "no tide data"
+        print(
+            f"ERROR: tide data unavailable ({err}); skipping report write to "
+            "preserve the last good report.",
+            file=sys.stderr,
+        )
+        return 1
+
     desktop_html = build_desktop(today, data=data)
     desktop_path.write_text(desktop_html, encoding="utf-8")
     print(f"Wrote {desktop_path} ({desktop_path.stat().st_size:,} bytes)")

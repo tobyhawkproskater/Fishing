@@ -391,8 +391,6 @@ body{margin:0;background:var(--ms-bg);font-family:var(--font-base);color:var(--m
           color:#fff;padding:18px var(--m-pad) 14px}
 .m-header h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:.2px}
 .m-header .meta{font-size:12px;opacity:.92}
-.m-header a.desktop-link{display:inline-block;margin-top:8px;color:#fff;text-decoration:underline;
-                         font-size:12px;opacity:.9}
 .m-section{padding:0 var(--m-pad) 14px}
 .m-card{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:8px;
         padding:12px;margin-top:12px;box-shadow:var(--shadow-sm)}
@@ -636,7 +634,6 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<h1>MA9 Fishing</h1>"
         f"<div class='meta'>{data['start'].strftime('%a %b %#d')} \u2013 "
         f"{data['end'].strftime('%a %b %#d')} \u00b7 updated {generated}</div>"
-        "<a class='desktop-link' href='index.html'>Full desktop view \u2192</a>"
         "</header>"
         f"{render_nav('mobile')}"
         "<section class='m-section'>"

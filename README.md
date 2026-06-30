@@ -12,12 +12,21 @@ can generate an up-to-the-minute fishing report on demand.
 - `Proposed State Plan.pdf` — proposed 2026-27 MA5-13 regs
 
 ## Setup
+
+Venv lives **outside** the OneDrive-synced project folder to avoid sync
+conflicts during `pip install`:
+
 ```powershell
-cd 'C:\MCP Fishing'
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e .
+cd 'C:\Users\tobys\OneDrive - Microsoft\MCP Fishing'
+py -3.12 -m venv 'C:\Users\tobys\.virtualenvs\mcp-fishing'
+& 'C:\Users\tobys\.virtualenvs\mcp-fishing\Scripts\python.exe' -m pip install 'cryptography==46.0.3'
+& 'C:\Users\tobys\.virtualenvs\mcp-fishing\Scripts\python.exe' -m pip install -e .
 ```
+
+The pre-install of `cryptography==46.0.3` is required on Windows ARM64: newer
+46.x releases (46.0.4+) have no win-arm64 wheel and pip falls back to a Rust
+build that fails without MSVC. `.vscode\settings.json` points VS Code at the
+external venv automatically.
 
 ## Build the knowledge base (Phase 1)
 ```powershell
@@ -47,9 +56,9 @@ The server speaks stdio. Register it in **Claude Desktop** by adding to
 {
   "mcpServers": {
     "fishing": {
-      "command": "C:\\MCP Fishing\\.venv\\Scripts\\python.exe",
+      "command": "C:\\Users\\tobys\\.virtualenvs\\mcp-fishing\\Scripts\\python.exe",
       "args": ["-m", "fishing.server"],
-      "cwd": "C:\\MCP Fishing"
+      "cwd": "C:\\Users\\tobys\\OneDrive - Microsoft\\MCP Fishing"
     }
   }
 }

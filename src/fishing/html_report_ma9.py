@@ -83,10 +83,19 @@ CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF = "green", "yellow", "red", "off"
 
 
 def _nearest_tide(hour_iso: str, tide_events: list[dict]) -> tuple[Optional[float], Optional[dict]]:
-    """Return (minutes_to_nearest_event, nearest_event)."""
+    """Return (minutes_from_hour_block_to_nearest_event, nearest_event).
+
+    The cell is treated as the 60-minute block it represents
+    ([hour, hour + 60 min)). A slack landing anywhere inside that block is
+    0 minutes away; outside it, distance is measured to the nearest block
+    edge. This keeps a slack at, say, 6:42 from being penalized just for not
+    falling exactly on the clock hour -- the hour that contains slack gets
+    full tide credit.
+    """
     if not tide_events:
         return None, None
-    h = dt.datetime.fromisoformat(hour_iso)
+    start = dt.datetime.fromisoformat(hour_iso)
+    end = start + dt.timedelta(minutes=60)
     best_dt = None
     best_ev = None
     for ev in tide_events:
@@ -94,7 +103,12 @@ def _nearest_tide(hour_iso: str, tide_events: list[dict]) -> tuple[Optional[floa
             t = dt.datetime.strptime(ev["t"], "%Y-%m-%d %H:%M")
         except Exception:
             continue
-        d = abs((h - t).total_seconds()) / 60.0
+        if t < start:
+            d = (start - t).total_seconds() / 60.0
+        elif t > end:
+            d = (t - end).total_seconds() / 60.0
+        else:
+            d = 0.0
         if best_dt is None or d < best_dt:
             best_dt = d
             best_ev = ev
@@ -264,6 +278,43 @@ def _fmt_iso_clock(iso: str, with_minutes: bool = True) -> str:
 # --- core data assembly ------------------------------------------------------
 
 def _assemble(start: dt.date) -> dict:
+    def _get_tides_resilient(station: str, begin_iso: str, total_days: int) -> dict:
+        """Fetch tides with a bulk call first, then day-sized fallbacks on timeout."""
+        bulk = noaa_tides(station, date=begin_iso, days=total_days)
+        if bulk.get("tides"):
+            return bulk
+
+        begin_d = dt.date.fromisoformat(begin_iso)
+        merged: dict[str, dict] = {}
+        last_error = bulk.get("error")
+        # 1-day windows are slower but much less likely to 504.
+        for i in range(total_days + 1):
+            day_iso = (begin_d + dt.timedelta(days=i)).isoformat()
+            part = noaa_tides(station, date=day_iso, days=1)
+            rows = part.get("tides") or []
+            if rows:
+                for r in rows:
+                    ts = r.get("t")
+                    if ts:
+                        merged[ts] = r
+            elif part.get("error"):
+                last_error = part.get("error")
+
+        if merged:
+            return {
+                "source": "NOAA CO-OPS",
+                "station": station,
+                "begin": begin_iso,
+                "end": str(begin_d + dt.timedelta(days=total_days)),
+                "tides": [merged[k] for k in sorted(merged)],
+            }
+        return bulk if bulk.get("error") else {
+            "source": "NOAA CO-OPS",
+            "station": station,
+            "error": last_error or "no tide data",
+            "tides": [],
+        }
+
     w = WATERS[WATER_KEY]
     om = wind_blend(w.lat, w.lon, hours=DAYS * 24)
     if "error" in om or not om.get("hours"):
@@ -273,7 +324,17 @@ def _assemble(start: dt.date) -> dict:
 
     # Pad ±1 day so cosine tide interpolation has bracketing events at the edges.
     tide_begin = (start - dt.timedelta(days=1)).isoformat()
-    tides = noaa_tides(w.tide_station, date=tide_begin, days=DAYS + 2)
+    primary_tide_station = w.tide_station
+    tides = _get_tides_resilient(primary_tide_station, tide_begin, DAYS + 2)
+    tide_station_used = primary_tide_station
+    # CO-OPS occasionally times out on Hansville. Fall back to Seattle so
+    # scoring and colorized charts remain live instead of flat/stale.
+    if tides.get("error") or not tides.get("tides"):
+        backup_tide_station = "9447130"
+        backup = _get_tides_resilient(backup_tide_station, tide_begin, DAYS + 2)
+        if backup.get("tides"):
+            tides = backup
+            tide_station_used = backup_tide_station
     tide_events = tides.get("tides", []) or []
 
     grid: list[dict] = []
@@ -354,6 +415,7 @@ def _assemble(start: dt.date) -> dict:
         "open_meteo_error": om.get("error"),
         "wind_sources": om.get("sources") or [om.get("source", "Open-Meteo")],
         "tides_error": tides.get("error"),
+        "tide_station_used": tide_station_used,
         "rules": kb.regulations("Marine Area 9"),
     }
 
@@ -1055,7 +1117,12 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         data = _assemble(start)
     w = data["water"]
 
-    sub = f"{_kind_tag(w.kind)} {w.lat:.3f}, {w.lon:.3f} · tide station Hansville (9445526)"
+    tide_station_used = data.get("tide_station_used") or "9445526"
+    tide_station_label = "Hansville" if tide_station_used == "9445526" else "Seattle (fallback)"
+    sub = (
+        f"{_kind_tag(w.kind)} {w.lat:.3f}, {w.lon:.3f} · "
+        f"tide station {tide_station_label} ({tide_station_used})"
+    )
 
     # Cards
     cards = []
@@ -1130,9 +1197,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<span></span><span></span><span></span><span></span>"
         "</div>Marine Area 9 \u2014 Fishability Report</h1>"
         f"<div class='meta'>{data['start'].strftime('%A, %B %d')} \u2013 "
-        f"{data['end'].strftime('%A, %B %d, %Y')} \u00b7 generated {generated} "
-        f"\u00b7 <a href='mobile.html' style='color:#fff;text-decoration:underline'>"
-        f"Mobile view \u2192</a></div>"
+        f"{data['end'].strftime('%A, %B %d, %Y')} \u00b7 generated {generated}</div>"
         "</header>"
         f"{render_nav('forecast')}"
         f"<section class='water' id='ma9'>"
