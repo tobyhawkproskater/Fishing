@@ -55,6 +55,25 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
+    # Partial tide data is just as misleading as none: when NOAA's day-by-day
+    # fallback drops a day (504), that day's heatmap collapses to the flat
+    # ~0.40 floor — no Prime tiers, no colored curve, no pill — while its
+    # neighbors look fine, so the gap is easy to miss. Require every forecast
+    # day to carry tide events before publishing.
+    covered = {ev["t"][:10] for ev in data["tide_events"] if ev.get("t")}
+    missing = [
+        row["date"].isoformat()
+        for row in data.get("grid", [])
+        if row["date"].isoformat() not in covered
+    ]
+    if missing:
+        print(
+            f"ERROR: tide data missing for {', '.join(missing)}; skipping report "
+            "write to preserve the last good report.",
+            file=sys.stderr,
+        )
+        return 1
+
     desktop_html = build_desktop(today, data=data)
     desktop_path.write_text(desktop_html, encoding="utf-8")
     print(f"Wrote {desktop_path} ({desktop_path.stat().st_size:,} bytes)")

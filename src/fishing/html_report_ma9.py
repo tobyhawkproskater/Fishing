@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import datetime as dt
 import html
+import json
 import math
 import sys
 from collections import defaultdict
@@ -211,6 +212,62 @@ def _precip_score(precip_in: Optional[float]) -> float:
     return 1.0 if p < 0.05 else 0.5
 
 
+def _window_heart(
+    lo: float, hi: float, day_date: dt.date,
+    cells: list[dict], tide_events: list[dict],
+) -> Optional[tuple[dt.datetime, float, dict]]:
+    """Return the score-weighted center-of-mass minute of a Prime/Good window.
+
+    The fishable window is asymmetric (wide incoming lead-in, sharp outgoing
+    drop), so the single peak minute sits near the trailing edge at slack.
+    Scanning the window [lo, hi] (fractional hours) at 1-minute resolution and
+    taking the centroid of the score curve pulls the marker into the heart of
+    the bite — earlier than slack, where the good fishing is actually
+    sustained. Slack distance is measured continuously (not quantized to the
+    60-minute cell block) and wind/precip come from the hourly cell. Returns
+    (minute, score_at_minute, hour_cell) or None.
+    """
+    parsed: list[tuple[dt.datetime, dict]] = []
+    for ev in tide_events:
+        try:
+            parsed.append((dt.datetime.strptime(ev["t"], "%Y-%m-%d %H:%M"), ev))
+        except (KeyError, ValueError, TypeError):
+            continue
+    if not parsed:
+        return None
+    h0 = max(0, int(math.floor(lo)))
+    h1 = min(23, int(math.ceil(hi)))
+    samples: list[tuple[dt.datetime, float, dict]] = []
+    num = 0.0  # sum of (minute-index * score)
+    den = 0.0  # sum of score
+    for hh in range(h0, h1 + 1):
+        cell = next((c for c in cells if c["hour"] == hh), None)
+        if cell is None:
+            continue
+        ws = cell.get("wind_score") or 0.0
+        ps = cell.get("precip_score") or 0.0
+        for mm in range(60):
+            if not (lo <= hh + mm / 60.0 <= hi):
+                continue
+            m = dt.datetime.combine(day_date, dt.time(hh, mm))
+            ev_t, ev = min(parsed, key=lambda p: abs((p[0] - m).total_seconds()))
+            mins = abs((ev_t - m).total_seconds()) / 60.0
+            before_win, after_win = _slack_half_windows(ev, tide_events)
+            half_win = after_win if m >= ev_t else before_win
+            ts = _tide_score(mins, half_win)
+            score = ws * ps * (0.4 + 0.6 * ts)
+            idx = hh * 60 + mm
+            num += idx * score
+            den += score
+            samples.append((m, score, cell))
+    if den <= 0 or not samples:
+        return None
+    centroid = num / den
+    # Snap the centroid to the nearest scanned minute so the marker, its score,
+    # and its hour cell all describe a real sampled instant.
+    return min(samples, key=lambda s: abs((s[0].hour * 60 + s[0].minute) - centroid))
+
+
 def _classify(in_slack: bool, wind_mph: Optional[float],
               gust_mph: Optional[float]) -> str:
     if not in_slack:
@@ -277,6 +334,31 @@ def _fmt_iso_clock(iso: str, with_minutes: bool = True) -> str:
 
 # --- core data assembly ------------------------------------------------------
 
+# Stored outside kb/ and src/ so committing a refreshed cache from CI does not
+# re-trigger the build workflow (its push filter watches kb/** and src/**).
+TIDE_CACHE_PATH = ROOT / "data" / "tide_cache.json"
+
+
+def _load_tide_cache() -> dict:
+    """Load the persistent tide-prediction cache ({station: {timestamp: event}})."""
+    try:
+        raw = json.loads(TIDE_CACHE_PATH.read_text(encoding="utf-8"))
+        return raw if isinstance(raw, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_tide_cache(cache: dict) -> None:
+    try:
+        TIDE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TIDE_CACHE_PATH.write_text(
+            json.dumps(cache, separators=(",", ":"), sort_keys=True),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
 def _assemble(start: dt.date) -> dict:
     def _get_tides_resilient(station: str, begin_iso: str, total_days: int) -> dict:
         """Fetch tides with a bulk call first, then day-sized fallbacks on timeout."""
@@ -335,7 +417,40 @@ def _assemble(start: dt.date) -> dict:
         if backup.get("tides"):
             tides = backup
             tide_station_used = backup_tide_station
-    tide_events = tides.get("tides", []) or []
+    fetched = tides.get("tides", []) or []
+
+    # Persistent tide cache. NOAA CO-OPS is intermittently down (504), but tide
+    # PREDICTIONS are deterministic astronomy and never change, so a stored copy
+    # is just as valid as a live one. Merge whatever we fetched into the cache
+    # (per station, keyed by timestamp), prune stale rows, and backfill the
+    # forecast window from it — so a partial or failed fetch still yields a
+    # complete report instead of a flat ~0.40 heatmap.
+    cache = _load_tide_cache()
+    if fetched:
+        bucket = cache.setdefault(tide_station_used, {})
+        for ev in fetched:
+            t = ev.get("t")
+            if t:
+                bucket[t] = ev
+        keep_floor = (start - dt.timedelta(days=3)).isoformat()
+        for station_bucket in cache.values():
+            for key in [k for k in station_bucket if k[:10] < keep_floor]:
+                del station_bucket[key]
+        _save_tide_cache(cache)
+
+    need_lo = (start - dt.timedelta(days=1)).isoformat()
+    need_hi = (start + dt.timedelta(days=DAYS)).isoformat()
+    merged: dict[str, dict] = {}
+    for ev in cache.get(tide_station_used, {}).values():
+        t = ev.get("t", "")
+        if t and need_lo <= t[:10] <= need_hi:
+            merged[t] = ev
+    for ev in fetched:
+        t = ev.get("t")
+        if t:
+            merged[t] = ev
+    tide_events = [merged[k] for k in sorted(merged)]
+    tide_from_cache = bool(tide_events) and len(tide_events) > len(fetched)
 
     grid: list[dict] = []
     all_windows: list[dict] = []
@@ -416,6 +531,7 @@ def _assemble(start: dt.date) -> dict:
         "wind_sources": om.get("sources") or [om.get("source", "Open-Meteo")],
         "tides_error": tides.get("error"),
         "tide_station_used": tide_station_used,
+        "tide_from_cache": tide_from_cache,
         "rules": kb.regulations("Marine Area 9"),
     }
 
@@ -666,7 +782,8 @@ def _fmt_hour_label(hr: int) -> str:
 
 def _render_daily_chart(day_date: dt.date, cells: list[dict],
                         hours_raw: list[dict],
-                        events_dt: list[tuple[dt.datetime, float, str]]) -> str:
+                        events_dt: list[tuple[dt.datetime, float, str]],
+                        tide_events: list[dict]) -> str:
     """SVG: tide curve (blue area) + wind/gust (orange) + temp (purple) for one day."""
     W, H = 940, 272
     PL, PR, PT, PB = 50, 50, 78, 38
@@ -814,37 +931,55 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 f"stroke-width='{sw}' stroke-linecap='round'/>"
             )
 
-        # Slack-moment marker spans = Prime or Good spans only.
-        spans: list[tuple[float, float]] = [
-            (lo, hi) for tier, lo, hi in tier_spans if tier in ("prime", "good")
-        ]
+        # Tide-change windows = contiguous runs of GREEN (Prime OR Good) cells.
+        # Merging the two tiers matters: a slack often sits on the Good side of
+        # a Prime->Good boundary (e.g. a 6:42 slack with the 6a cell Prime and
+        # the 7a cell Good), and the center-of-mass must be taken over the whole
+        # productive run, not a truncated tier slice.
+        spans: list[tuple[float, float]] = []
+        _run_lo: Optional[float] = None
+        _prev_h: Optional[int] = None
+        for c in cells_sorted:
+            if c["score"] >= 0.75:
+                if _run_lo is None:
+                    _run_lo = c["hour"] - 0.5
+                _prev_h = c["hour"]
+            elif _run_lo is not None and _prev_h is not None:
+                spans.append((_run_lo, _prev_h + 0.5))
+                _run_lo = None
+        if _run_lo is not None and _prev_h is not None:
+            spans.append((_run_lo, _prev_h + 0.5))
 
-        # BEST-MOMENT marker: any predicted H/L on this day that falls inside a
-        # GREEN span is the literal peak of the fishability score. Mark the exact
-        # minute with a vertical green line + star + time across the top.
-        best_moments: list[tuple[dt.datetime, float, str]] = []
+        # BEST-MOMENT marker: each Prime/Good span that contains a predicted
+        # slack anchors one pill for that tide-change window. The pill sits on
+        # the score-weighted center-of-mass of the window — the heart of the
+        # bite — which lands ahead of slack on asymmetric windows (long lead-in,
+        # sharp drop), so the eye is drawn to when you should actually be out.
+        windows_with_slack: list[tuple[float, float]] = []
+        seen_spans: set[tuple[float, float]] = set()
         for t, v, kind in events_dt:
             if t.date() != day_date:
                 continue
             hr_f = t.hour + t.minute / 60.0
-            if any(lo <= hr_f <= hi for lo, hi in spans):
-                best_moments.append((t, v, kind))
-        for t, v, kind in best_moments:
-            hr_f = t.hour + t.minute / 60.0
-            cx = x_of(hr_f)
-            # Glass-calm flag: nearest hour cell has gust <= 10 AND wind <= 7.
-            # Visual only — the badge LABEL is driven by the heatmap score tier
-            # so it can never contradict the cell color underneath.
-            slack_hr = int(round(hr_f))
-            slack_cell = next(
-                (c for c in cells if c["hour"] == slack_hr), None
-            )
+            span = next(((lo, hi) for lo, hi in spans if lo <= hr_f <= hi), None)
+            if span and span not in seen_spans:
+                seen_spans.add(span)
+                windows_with_slack.append(span)
+
+        for lo, hi in windows_with_slack:
+            best = _window_heart(lo, hi, day_date, cells, tide_events)
+            if best is None:
+                continue
+            peak_t, score_val, peak_cell = best
+            cx = x_of(peak_t.hour + peak_t.minute / 60.0)
+            # Glass-calm flag: heart-of-window hour cell has gust <= 10 AND
+            # wind <= 7. Visual only — the badge LABEL is driven by the score
+            # tier so it can never contradict the cell color underneath.
             glass = bool(
-                slack_cell
-                and (slack_cell.get("gust_mph") or 0) <= 10
-                and (slack_cell.get("wind_mph") or 0) <= 7
+                peak_cell
+                and (peak_cell.get("gust_mph") or 0) <= 10
+                and (peak_cell.get("wind_mph") or 0) <= 7
             )
-            score_val = (slack_cell or {}).get("score")
             score_str = (
                 f"{score_val:.2f}".lstrip("0")
                 if isinstance(score_val, (int, float)) and score_val > 0
@@ -889,9 +1024,9 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 font_sz = 10
 
             label = (
-                f"\u2605 {tier_label} {score_str} {_fmt_clock(t)}"
+                f"\u2605 {tier_label} {score_str} {_fmt_clock(peak_t)}"
                 if score_str
-                else f"\u2605 {tier_label} {_fmt_clock(t)}"
+                else f"\u2605 {tier_label} {_fmt_clock(peak_t)}"
             )
 
             # Above the chart frame, on a dedicated shelf between the score
@@ -1086,7 +1221,7 @@ def _render_daily_charts(data: dict) -> str:
         "<span><span class='swatch' style='display:inline-block;width:14px;height:14px;"
         "border-radius:3px;background:#054B05;color:#fff;text-align:center;font-size:10px;"
         "line-height:14px;vertical-align:middle;margin-right:6px'>\u2605</span>"
-        "<strong>PRIME / GOOD</strong> &mdash; predicted slack tide, labeled by the heatmap tier of the slack hour</span>"
+        "<strong>PRIME / GOOD</strong> &mdash; heart of the bite (score-weighted center of the window, ahead of slack)</span>"
         "<span><span class='swatch' style='display:inline-block;width:32px;height:14px;"
         "border-radius:7px;background:#FFB900;border:1px solid #D29200;color:#3B2F00;"
         "text-align:center;font-size:10px;line-height:14px;font-weight:800;vertical-align:middle;"
@@ -1100,7 +1235,7 @@ def _render_daily_charts(data: dict) -> str:
 
     charts = []
     for row in data["grid"]:
-        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt)
+        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt, data["tide_events"])
         badge_label, badge_cls = _day_wind_badge(row)
         badge_html = (
             f"<span class='day-badge {badge_cls}'>{badge_label}</span>"

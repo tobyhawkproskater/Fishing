@@ -55,7 +55,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A docs/
+          # data/ holds the tide-prediction cache; persisting it keeps the
+          # report buildable when NOAA CO-OPS is timing out on a later run.
+          git add -A docs/ data/
           if git diff --staged --quiet; then
             echo "No changes."
           else
