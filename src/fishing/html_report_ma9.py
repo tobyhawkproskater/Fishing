@@ -1,6 +1,6 @@
 """MA9-only 7-day report with a tide x weather fishability heatmap.
 
-Scoring model (per daylight hour, 5 AM - 9 PM PT):
+Scoring model (per hour, nautical dawn - nautical dusk, per water lat/lon):
     score = wind_score * precip_score * (0.4 + 0.6 * tide_score)
 where
     tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at the edge of
@@ -59,10 +59,14 @@ from .html_report import (
     CSS, _deg_to_compass, _fmt, _h, _kind_tag, _render_buoy,
     _render_rules, _render_tides, _group_tides_by_day, _wind_cell_class,
 )
+from .sun import sun_times as _sun_times, hour_of_day as _hod, fmt_clock as _sun_clock
 
 DAYS = 7
-HOUR_START = 5   # 5 AM PT
-HOUR_END = 21    # 9 PM PT inclusive label, exclusive end
+# Grid spans nautical dawn through nautical dusk at PNW latitudes year-round
+# (summer nautical dawn ~3:30 AM, dusk ~10:55 PM). Cells outside a given day's
+# actual first/last-light window are visually dimmed in the heatmap.
+HOUR_START = 3   # 3 AM PT
+HOUR_END = 22    # 10 PM PT inclusive label
 WATER_KEY = "ma9"
 
 
@@ -457,7 +461,18 @@ def _assemble(start: dt.date) -> dict:
 
     for di in range(DAYS):
         day = start + dt.timedelta(days=di)
-        row = {"date": day, "cells": []}
+        sun = _sun_times(day, w.lat, w.lon)
+        sun_row = {
+            "nautical_dawn": sun["nautical_dawn"],
+            "sunrise":       sun["sunrise"],
+            "sunset":        sun["sunset"],
+            "nautical_dusk": sun["nautical_dusk"],
+            "nautical_dawn_h": _hod(sun["nautical_dawn"]),
+            "sunrise_h":       _hod(sun["sunrise"]),
+            "sunset_h":        _hod(sun["sunset"]),
+            "nautical_dusk_h": _hod(sun["nautical_dusk"]),
+        }
+        row = {"date": day, "cells": [], "sun": sun_row}
         run: list[dict] = []
         for hr in range(HOUR_START, HOUR_END + 1):
             key = f"{day.isoformat()}T{hr:02d}:00"
@@ -651,13 +666,31 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         day = row["date"]
         dlabel = day.strftime("%a %b %#d")
         cells = [f"<td class='label'>{dlabel}</td>"]
+        sun = row.get("sun") or {}
+        nd_h = sun.get("nautical_dawn_h")
+        nu_h = sun.get("nautical_dusk_h")
+        sr_h = sun.get("sunrise_h")
+        ss_h = sun.get("sunset_h")
         for c in row["cells"]:
             bg, fg = _score_cell_class(c["score"])
-            cls = "tide-marker" if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()) else ""
+            cls_parts = []
+            if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()):
+                cls_parts.append("tide-marker")
+            # Cell center is `hour + 0.5`. Anything fully outside nautical
+            # dawn -> dusk is "night" (dark grey); anything between naut-dawn
+            # and sunrise (or sunset and naut-dusk) is "twilight" (light grey).
+            hr_mid = c["hour"] + 0.5
+            style = f"background:{bg};color:{fg}"
+            if nd_h is not None and nu_h is not None and (hr_mid < nd_h or hr_mid > nu_h):
+                cls_parts.append("night")
+                style = "background:#605E5C;color:#F3F2F1"
+            elif sr_h is not None and ss_h is not None and (hr_mid < sr_h or hr_mid > ss_h):
+                cls_parts.append("twilight")
+                style = f"background:{bg};color:{fg};opacity:0.65"
             tip = _cell_tooltip(c)
             display = f"{c['score']:.2f}".lstrip("0") if c["score"] > 0 else ""
             cells.append(
-                f"<td class='{cls}' style='background:{bg};color:{fg}' "
+                f"<td class='{' '.join(cls_parts)}' style='{style}' "
                 f"title=\"{html.escape(tip)}\">{display}</td>"
             )
         rows.append("<tr>" + "".join(cells) + "</tr>")
@@ -673,6 +706,9 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
+        "<span style='margin-left:14px'>"
+        "<span class='sw' style='background:#605E5C'></span>night</span>"
+        "<span><span class='sw' style='background:#DFF6DD;opacity:0.65'></span>twilight</span>"
         "</div>"
     )
     return legend + "<table class='heatmap'><thead>" + header + "</thead><tbody>" + "".join(rows) + "</tbody></table>"
@@ -783,7 +819,8 @@ def _fmt_hour_label(hr: int) -> str:
 def _render_daily_chart(day_date: dt.date, cells: list[dict],
                         hours_raw: list[dict],
                         events_dt: list[tuple[dt.datetime, float, str]],
-                        tide_events: list[dict]) -> str:
+                        tide_events: list[dict],
+                        sun: Optional[dict] = None) -> str:
     """SVG: tide curve (blue area) + wind/gust (orange) + temp (purple) for one day."""
     W, H = 940, 272
     PL, PR, PT, PB = 50, 50, 78, 38
@@ -818,17 +855,36 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
 
     # (Score is now shown directly via the tide curve color, no separate strip.)
 
-    # Non-daylight shading (before HOUR_START, after HOUR_END+1) + 30-min gridlines.
-    # Drawn before the tide curve so everything else paints on top.
-    parts.append(
-        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
-    parts.append(
-        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
-        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
+    # Non-daylight shading: three tiers based on real sun geometry for this
+    # day at this water's lat/lon:
+    #   0  -> nautical_dawn : deep night   (dark grey)
+    #   nautical_dawn -> sunrise           : first-light twilight (light grey)
+    #   sunrise       -> sunset            : full daylight (clear)
+    #   sunset        -> nautical_dusk     : last-light twilight (light grey)
+    #   nautical_dusk -> 24                : deep night (dark grey)
+    # Falls back to the fixed HOUR_START/HOUR_END window if sun data missing.
+    NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
+    TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
+
+    def _shade(x0: float, x1: float, fill: str, op: float) -> str:
+        if x1 <= x0:
+            return ""
+        return (f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
+                f"fill='{fill}' opacity='{op}'/>")
+
+    if sun and all(sun.get(k) is not None for k in
+                   ("nautical_dawn_h", "sunrise_h", "sunset_h", "nautical_dusk_h")):
+        nd = sun["nautical_dawn_h"]
+        sr = sun["sunrise_h"]
+        ss = sun["sunset_h"]
+        nu = sun["nautical_dusk_h"]
+        parts.append(_shade(x_of(0),  x_of(nd), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(nd), x_of(sr), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(ss), x_of(nu), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(nu), x_of(24), NIGHT_FILL, NIGHT_OP))
+    else:
+        parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
     # 30-min vertical gridlines (half-hours lighter, hours a touch darker).
     half = 0
     while half <= 48:
@@ -1184,6 +1240,34 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
             f"font-weight='{weight}' fill='var(--ms-text-secondary)'>{_fmt_hour_label(hr)}</text>"
         )
 
+    # Sun-event edge labels below the hour axis. Outer/inner anchoring so the
+    # first-light + sunrise pair spread apart (and sunset + last-light) instead
+    # of colliding in early-summer months when they sit only ~1.7 h apart.
+    if sun:
+        sun_label_y = PT + IH + 25
+        sun_tick_top = PT + IH + 1
+        sun_tick_bot = PT + IH + 5
+        for key, label, anchor, dx in (
+            ("nautical_dawn_h", "first",   "end",   -3),
+            ("sunrise_h",       "sunrise", "start",  3),
+            ("sunset_h",        "sunset",  "end",   -3),
+            ("nautical_dusk_h", "last",    "start",  3),
+        ):
+            h = sun.get(key)
+            t = sun.get(key.replace("_h", ""))
+            if h is None or t is None:
+                continue
+            cx = x_of(h)
+            parts.append(
+                f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{sun_tick_top}' "
+                f"y2='{sun_tick_bot}' stroke='#605E5C' stroke-width='1.2'/>"
+            )
+            parts.append(
+                f"<text x='{cx + dx:.1f}' y='{sun_label_y}' text-anchor='{anchor}' "
+                f"font-size='9' font-style='italic' fill='#605E5C'>"
+                f"{label} {_sun_clock(t)}</text>"
+            )
+
     # Frame
     parts.append(
         f"<rect x='{PL}' y='{PT}' width='{IW}' height='{IH}' "
@@ -1235,7 +1319,9 @@ def _render_daily_charts(data: dict) -> str:
 
     charts = []
     for row in data["grid"]:
-        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt, data["tide_events"])
+        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"],
+                                  events_dt, data["tide_events"],
+                                  sun=row.get("sun"))
         badge_label, badge_cls = _day_wind_badge(row)
         badge_html = (
             f"<span class='day-badge {badge_cls}'>{badge_label}</span>"
@@ -1362,7 +1448,8 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "
-        "Daylight only (5 AM \u2013 9 PM PT). "
+        "Chart shading: night (dark grey) \u2192 nautical twilight (light grey) \u2192 daylight (clear); "
+        "labeled at first light, sunrise, sunset, last light per day. "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"

@@ -24,6 +24,7 @@ from .html_report_ma9 import (
     _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
     _window_heart,
 )
+from .sun import fmt_clock as _sun_clock
 
 
 # --- mobile-tuned per-day chart ---------------------------------------------
@@ -31,7 +32,8 @@ from .html_report_ma9 import (
 def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                                hours_raw: list[dict],
                                events_dt: list[tuple[dt.datetime, float, str]],
-                               tide_events: list[dict]) -> str:
+                               tide_events: list[dict],
+                               sun: Optional[dict] = None) -> str:
     """Portrait-friendly SVG: same data layers as desktop, larger type."""
     W, H = 600, 320
     PL, PR, PT, PB = 40, 40, 78, 40
@@ -66,17 +68,31 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
 
     # (Score is shown directly via the tide curve color, no separate strip.)
 
-    # Non-daylight shading + hourly vertical gridlines (no half-hours on mobile;
-    # too noisy at this width).
-    parts.append(
-        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
-    parts.append(
-        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
-        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
+    # Sun-aware shading: night (dark) -> nautical twilight (light) -> daylight
+    # (clear) -> nautical twilight -> night. Falls back to the fixed
+    # HOUR_START/HOUR_END window if sun data is missing.
+    NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
+    TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
+
+    def _shade(x0: float, x1: float, fill: str, op: float) -> str:
+        if x1 <= x0:
+            return ""
+        return (f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
+                f"fill='{fill}' opacity='{op}'/>")
+
+    if sun and all(sun.get(k) is not None for k in
+                   ("nautical_dawn_h", "sunrise_h", "sunset_h", "nautical_dusk_h")):
+        nd = sun["nautical_dawn_h"]
+        sr = sun["sunrise_h"]
+        ss = sun["sunset_h"]
+        nu = sun["nautical_dusk_h"]
+        parts.append(_shade(x_of(0),  x_of(nd), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(nd), x_of(sr), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(ss), x_of(nu), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(nu), x_of(24), NIGHT_FILL, NIGHT_OP))
+    else:
+        parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
     for hr in range(0, 25):
         cx = x_of(hr)
         parts.append(
@@ -394,6 +410,33 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 f"font-weight='600' fill='var(--ms-text-secondary)'>{label}</text>"
             )
 
+    # Sun-event edge labels below the hour axis (outer/inner anchoring so the
+    # tight first-light + sunrise pair spreads apart on this narrow mobile SVG).
+    if sun:
+        sun_label_y = PT + IH + 32
+        sun_tick_top = PT + IH + 1
+        sun_tick_bot = PT + IH + 5
+        for key, label, anchor, dx in (
+            ("nautical_dawn_h", "first",   "end",   -3),
+            ("sunrise_h",       "sunrise", "start",  3),
+            ("sunset_h",        "sunset",  "end",   -3),
+            ("nautical_dusk_h", "last",    "start",  3),
+        ):
+            h = sun.get(key)
+            t = sun.get(key.replace("_h", ""))
+            if h is None or t is None:
+                continue
+            cx = x_of(h)
+            parts.append(
+                f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{sun_tick_top}' "
+                f"y2='{sun_tick_bot}' stroke='#605E5C' stroke-width='1.5'/>"
+            )
+            parts.append(
+                f"<text x='{cx + dx:.1f}' y='{sun_label_y}' text-anchor='{anchor}' "
+                f"font-size='10' font-style='italic' fill='#605E5C'>"
+                f"{label} {_sun_clock(t)}</text>"
+            )
+
     # Frame
     parts.append(
         f"<rect x='{PL}' y='{PT}' width='{IW}' height='{IH}' "
@@ -629,7 +672,9 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
             if wind_label else ""
         )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
-        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"])
+        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"],
+                                         events_dt, data["tide_events"],
+                                         sun=row.get("sun"))
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"

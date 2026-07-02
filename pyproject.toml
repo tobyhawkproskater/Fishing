@@ -8,6 +8,9 @@ dependencies = [
     "openpyxl>=3.1.5",
     "mcp>=1.2.0",
     "httpx>=0.27.0",
+    # Windows ships no IANA tzdata; zoneinfo silently falls back to a fixed
+    # -8 offset (wrong during PDT). Pin so sunrise/sunset stay accurate.
+    "tzdata>=2024.1",
     # Pin: 47+ has no win-arm64 wheel and tries to build from Rust source.
     "cryptography>=46.0.3,<47",
 ]
