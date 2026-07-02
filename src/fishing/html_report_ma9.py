@@ -1,6 +1,6 @@
 """MA9-only 7-day report with a tide x weather fishability heatmap.
 
-Scoring model (per hour, nautical dawn - nautical dusk, per water lat/lon):
+Scoring model (per hour, civil dawn - civil dusk, per water lat/lon):
     score = wind_score * precip_score * (0.4 + 0.6 * tide_score)
 where
     tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at the edge of
@@ -62,11 +62,12 @@ from .html_report import (
 from .sun import sun_times as _sun_times, hour_of_day as _hod, fmt_clock as _sun_clock
 
 DAYS = 7
-# Grid spans nautical dawn through nautical dusk at PNW latitudes year-round
-# (summer nautical dawn ~3:30 AM, dusk ~10:55 PM). Cells outside a given day's
-# actual first/last-light window are visually dimmed in the heatmap.
-HOUR_START = 3   # 3 AM PT
-HOUR_END = 22    # 10 PM PT inclusive label
+# Grid spans civil twilight (sun 6° below horizon) through civil dusk at PNW
+# latitudes year-round (summer civil dawn ~4:30 AM, civil dusk ~9:55 PM).
+# Cells outside a given day's actual first/last-light window are visually
+# dimmed in the heatmap.
+HOUR_START = 4   # 4 AM PT
+HOUR_END = 21    # 9 PM PT inclusive label
 WATER_KEY = "ma9"
 
 
@@ -463,14 +464,14 @@ def _assemble(start: dt.date) -> dict:
         day = start + dt.timedelta(days=di)
         sun = _sun_times(day, w.lat, w.lon)
         sun_row = {
-            "nautical_dawn": sun["nautical_dawn"],
-            "sunrise":       sun["sunrise"],
-            "sunset":        sun["sunset"],
-            "nautical_dusk": sun["nautical_dusk"],
-            "nautical_dawn_h": _hod(sun["nautical_dawn"]),
-            "sunrise_h":       _hod(sun["sunrise"]),
-            "sunset_h":        _hod(sun["sunset"]),
-            "nautical_dusk_h": _hod(sun["nautical_dusk"]),
+            "civil_dawn": sun["civil_dawn"],
+            "sunrise":    sun["sunrise"],
+            "sunset":     sun["sunset"],
+            "civil_dusk": sun["civil_dusk"],
+            "civil_dawn_h": _hod(sun["civil_dawn"]),
+            "sunrise_h":    _hod(sun["sunrise"]),
+            "sunset_h":     _hod(sun["sunset"]),
+            "civil_dusk_h": _hod(sun["civil_dusk"]),
         }
         row = {"date": day, "cells": [], "sun": sun_row}
         run: list[dict] = []
@@ -667,8 +668,8 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         dlabel = day.strftime("%a %b %#d")
         cells = [f"<td class='label'>{dlabel}</td>"]
         sun = row.get("sun") or {}
-        nd_h = sun.get("nautical_dawn_h")
-        nu_h = sun.get("nautical_dusk_h")
+        cd_h = sun.get("civil_dawn_h")
+        cu_h = sun.get("civil_dusk_h")
         sr_h = sun.get("sunrise_h")
         ss_h = sun.get("sunset_h")
         for c in row["cells"]:
@@ -676,12 +677,12 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
             cls_parts = []
             if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()):
                 cls_parts.append("tide-marker")
-            # Cell center is `hour + 0.5`. Anything fully outside nautical
-            # dawn -> dusk is "night" (dark grey); anything between naut-dawn
-            # and sunrise (or sunset and naut-dusk) is "twilight" (light grey).
+            # Cell center is `hour + 0.5`. Anything fully outside civil dawn
+            # -> dusk is "night" (dark grey); anything between civil dawn and
+            # sunrise (or sunset and civil dusk) is "twilight" (light grey).
             hr_mid = c["hour"] + 0.5
             style = f"background:{bg};color:{fg}"
-            if nd_h is not None and nu_h is not None and (hr_mid < nd_h or hr_mid > nu_h):
+            if cd_h is not None and cu_h is not None and (hr_mid < cd_h or hr_mid > cu_h):
                 cls_parts.append("night")
                 style = "background:#605E5C;color:#F3F2F1"
             elif sr_h is not None and ss_h is not None and (hr_mid < sr_h or hr_mid > ss_h):
@@ -857,11 +858,11 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
 
     # Non-daylight shading: three tiers based on real sun geometry for this
     # day at this water's lat/lon:
-    #   0  -> nautical_dawn : deep night   (dark grey)
-    #   nautical_dawn -> sunrise           : first-light twilight (light grey)
-    #   sunrise       -> sunset            : full daylight (clear)
-    #   sunset        -> nautical_dusk     : last-light twilight (light grey)
-    #   nautical_dusk -> 24                : deep night (dark grey)
+    #   0  -> civil_dawn : deep night   (dark grey)
+    #   civil_dawn -> sunrise           : first-light twilight (light grey)
+    #   sunrise    -> sunset            : full daylight (clear)
+    #   sunset     -> civil_dusk        : last-light twilight (light grey)
+    #   civil_dusk -> 24                : deep night (dark grey)
     # Falls back to the fixed HOUR_START/HOUR_END window if sun data missing.
     NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
     TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
@@ -873,15 +874,15 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 f"fill='{fill}' opacity='{op}'/>")
 
     if sun and all(sun.get(k) is not None for k in
-                   ("nautical_dawn_h", "sunrise_h", "sunset_h", "nautical_dusk_h")):
-        nd = sun["nautical_dawn_h"]
+                   ("civil_dawn_h", "sunrise_h", "sunset_h", "civil_dusk_h")):
+        cd = sun["civil_dawn_h"]
         sr = sun["sunrise_h"]
         ss = sun["sunset_h"]
-        nu = sun["nautical_dusk_h"]
-        parts.append(_shade(x_of(0),  x_of(nd), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(nd), x_of(sr), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(ss), x_of(nu), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(nu), x_of(24), NIGHT_FILL, NIGHT_OP))
+        cu = sun["civil_dusk_h"]
+        parts.append(_shade(x_of(0),  x_of(cd), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(cd), x_of(sr), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(ss), x_of(cu), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(cu), x_of(24), NIGHT_FILL, NIGHT_OP))
     else:
         parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
         parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
@@ -1242,16 +1243,16 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
 
     # Sun-event edge labels below the hour axis. Outer/inner anchoring so the
     # first-light + sunrise pair spread apart (and sunset + last-light) instead
-    # of colliding in early-summer months when they sit only ~1.7 h apart.
+    # of colliding in early-summer months when they sit only ~40 min apart.
     if sun:
         sun_label_y = PT + IH + 25
         sun_tick_top = PT + IH + 1
         sun_tick_bot = PT + IH + 5
         for key, label, anchor, dx in (
-            ("nautical_dawn_h", "first",   "end",   -3),
-            ("sunrise_h",       "sunrise", "start",  3),
-            ("sunset_h",        "sunset",  "end",   -3),
-            ("nautical_dusk_h", "last",    "start",  3),
+            ("civil_dawn_h", "first",   "end",   -3),
+            ("sunrise_h",    "sunrise", "start",  3),
+            ("sunset_h",     "sunset",  "end",   -3),
+            ("civil_dusk_h", "last",    "start",  3),
         ):
             h = sun.get(key)
             t = sun.get(key.replace("_h", ""))
@@ -1448,7 +1449,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "
-        "Chart shading: night (dark grey) \u2192 nautical twilight (light grey) \u2192 daylight (clear); "
+        "Chart shading: night (dark grey) \u2192 civil twilight (light grey) \u2192 daylight (clear); "
         "labeled at first light, sunrise, sunset, last light per day. "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"

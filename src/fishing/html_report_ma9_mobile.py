@@ -68,8 +68,8 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
 
     # (Score is shown directly via the tide curve color, no separate strip.)
 
-    # Sun-aware shading: night (dark) -> nautical twilight (light) -> daylight
-    # (clear) -> nautical twilight -> night. Falls back to the fixed
+    # Sun-aware shading: night (dark) -> civil twilight (light) -> daylight
+    # (clear) -> civil twilight -> night. Falls back to the fixed
     # HOUR_START/HOUR_END window if sun data is missing.
     NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
     TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
@@ -81,15 +81,15 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 f"fill='{fill}' opacity='{op}'/>")
 
     if sun and all(sun.get(k) is not None for k in
-                   ("nautical_dawn_h", "sunrise_h", "sunset_h", "nautical_dusk_h")):
-        nd = sun["nautical_dawn_h"]
+                   ("civil_dawn_h", "sunrise_h", "sunset_h", "civil_dusk_h")):
+        cd = sun["civil_dawn_h"]
         sr = sun["sunrise_h"]
         ss = sun["sunset_h"]
-        nu = sun["nautical_dusk_h"]
-        parts.append(_shade(x_of(0),  x_of(nd), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(nd), x_of(sr), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(ss), x_of(nu), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(nu), x_of(24), NIGHT_FILL, NIGHT_OP))
+        cu = sun["civil_dusk_h"]
+        parts.append(_shade(x_of(0),  x_of(cd), NIGHT_FILL, NIGHT_OP))
+        parts.append(_shade(x_of(cd), x_of(sr), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(ss), x_of(cu), TWI_FILL,   TWI_OP))
+        parts.append(_shade(x_of(cu), x_of(24), NIGHT_FILL, NIGHT_OP))
     else:
         parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
         parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
@@ -417,10 +417,10 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         sun_tick_top = PT + IH + 1
         sun_tick_bot = PT + IH + 5
         for key, label, anchor, dx in (
-            ("nautical_dawn_h", "first",   "end",   -3),
-            ("sunrise_h",       "sunrise", "start",  3),
-            ("sunset_h",        "sunset",  "end",   -3),
-            ("nautical_dusk_h", "last",    "start",  3),
+            ("civil_dawn_h", "first",   "end",   -3),
+            ("sunrise_h",    "sunrise", "start",  3),
+            ("sunset_h",     "sunset",  "end",   -3),
+            ("civil_dusk_h", "last",    "start",  3),
         ):
             h = sun.get(key)
             t = sun.get(key.replace("_h", ""))

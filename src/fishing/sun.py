@@ -1,4 +1,4 @@
-"""Sun-event calculator: sunrise/sunset + nautical twilight per day.
+"""Sun-event calculator: sunrise/sunset + civil twilight per day.
 
 Pure-Python implementation of the standard "sunrise equation" (NOAA/USNO
 low-precision algorithm) — accurate to about a minute in the temperate
@@ -7,10 +7,10 @@ latitudes we care about. No third-party dependency required.
 `sun_times(date, lat, lon)` returns a dict of naive local-Pacific
 datetimes for four events on `date`:
 
-    nautical_dawn  — sun 12° below horizon (morning)  = "first light"
-    sunrise        — sun -0.833° (refraction + solar radius)
-    sunset         — sun -0.833° (evening)
-    nautical_dusk  — sun 12° below horizon (evening)  = "last light"
+    civil_dawn  — sun 6° below horizon (morning)  = "first light"
+    sunrise     — sun -0.833° (refraction + solar radius)
+    sunset      — sun -0.833° (evening)
+    civil_dusk  — sun 6° below horizon (evening)  = "last light"
 
 A key returns None if the sun never reaches that altitude on that date
 (polar day/night — not relevant for MA9 but returned safely).
@@ -46,7 +46,8 @@ def _solar_events(date: dt.date, lat: float, lon: float,
                   altitude_deg: float) -> tuple[Optional[dt.datetime], Optional[dt.datetime]]:
     """Return (rising_utc, setting_utc) for the sun crossing `altitude_deg`.
 
-    Altitudes: -0.833° for sunrise/sunset, -12° for nautical twilight.
+    Altitudes: -0.833° for sunrise/sunset, -6° for civil twilight,
+    -12° for nautical twilight.
     Returns (None, None) if the sun never crosses that altitude.
     """
     jd = _julian_day(date) + 0.5  # noon of `date` in UT terms
@@ -83,13 +84,13 @@ def _to_local(u: Optional[dt.datetime]) -> Optional[dt.datetime]:
 
 def sun_times(date: dt.date, lat: float, lon: float) -> dict:
     """Return naive local-Pacific datetimes for the four sun events on `date`."""
-    naut_rise, naut_set = _solar_events(date, lat, lon, -12.0)
+    civ_rise, civ_set = _solar_events(date, lat, lon, -6.0)
     day_rise, day_set = _solar_events(date, lat, lon, -0.833)
     return {
-        "nautical_dawn": _to_local(naut_rise),
-        "sunrise":       _to_local(day_rise),
-        "sunset":        _to_local(day_set),
-        "nautical_dusk": _to_local(naut_set),
+        "civil_dawn": _to_local(civ_rise),
+        "sunrise":    _to_local(day_rise),
+        "sunset":     _to_local(day_set),
+        "civil_dusk": _to_local(civ_set),
     }
 
 
