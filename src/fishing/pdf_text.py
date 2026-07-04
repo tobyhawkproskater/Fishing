@@ -38,9 +38,45 @@ def _find_pdftotext() -> Path:
     )
 
 
-def extract_text(pdf_path: Path, *, layout: bool = True) -> str:
-    """Run pdftotext on *pdf_path* and return its text output."""
-    exe = _find_pdftotext()
+def _extract_with_pypdf(pdf_path: Path) -> str:
+    """Fallback extractor using pure-Python pypdf (no external binary).
+
+    Used when Xpdf's ``pdftotext`` isn't installed. Layout fidelity is lower
+    than Xpdf's ``-layout`` output, which is fine for indexing map/newsletter
+    text but is why the WDFW rules parsers still prefer the binary.
+    """
+    try:
+        from pypdf import PdfReader
+    except ImportError as e:
+        raise FileNotFoundError(
+            "Neither pdftotext.exe nor pypdf is available. Install Xpdf tools "
+            "(https://www.xpdfreader.com/download.html) or run: pip install pypdf"
+        ) from e
+    reader = PdfReader(str(pdf_path))
+    parts: list[str] = []
+    for page in reader.pages:
+        try:
+            parts.append(page.extract_text() or "")
+        except Exception:  # noqa: BLE001 - skip unreadable pages, keep the rest
+            continue
+    return "\n".join(parts).strip()
+
+
+def extract_text(pdf_path: Path, *, layout: bool = True, allow_pypdf: bool = False) -> str:
+    """Extract text from *pdf_path*.
+
+    Uses the Xpdf ``pdftotext`` binary (best layout fidelity). The WDFW rules
+    parsers depend on its ``-layout`` column output, so they leave
+    ``allow_pypdf=False`` and raise if the binary is missing (the caller then
+    keeps the last good parse). The map importer passes ``allow_pypdf=True`` to
+    fall back to pure-Python ``pypdf`` when the binary isn't installed.
+    """
+    try:
+        exe = _find_pdftotext()
+    except FileNotFoundError:
+        if allow_pypdf:
+            return _extract_with_pypdf(pdf_path)
+        raise
     with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp:
         out_path = Path(tmp.name)
     try:

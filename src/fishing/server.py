@@ -67,6 +67,19 @@ def get_gear(use: Optional[str] = None) -> list[dict]:
     return kb.gear(use)
 
 
+@mcp.tool()
+def get_maps(water: Optional[str] = None, query: Optional[str] = None,
+             kind: Optional[str] = None) -> list[dict]:
+    """Cross-reference fishing-map PDFs (John's Sporting Goods, etc.).
+
+    `water`: filter by a water key / spot / place tag (e.g. "ma9", "snohomish",
+    "mukilteo"). `query`: free-text match on title/filename/extracted text.
+    `kind`: filter by document type ("map", "guide", "newsletter", "coupon").
+    Each map includes its `source_url`, `local_path`, and cross-reference tags.
+    """
+    return kb.maps(water=water, query=query, kind=kind)
+
+
 # --- Distance ---------------------------------------------------------------
 
 @mcp.tool()

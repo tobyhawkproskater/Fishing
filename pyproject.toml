@@ -17,6 +17,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff>=0.6.0"]
+# Map importer (fishing.import_maps): a real browser is needed to pass the
+# Cloudflare challenge on johnssportinggoods.com. After install, run:
+#   python -m playwright install chromium
+# pypdf extracts text from map/newsletter PDFs when the Xpdf pdftotext binary
+# isn't installed (pure Python, no cryptography needed for plain text).
+maps = ["playwright>=1.40", "pypdf>=4.0"]
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -92,3 +92,44 @@ def gear(use: Optional[str] = None) -> list[dict]:
 def meta() -> dict:
     with _conn() as c:
         return {r["key"]: r["value"] for r in c.execute("SELECT * FROM meta")}
+
+
+# --- maps (cross-reference PDFs) ---------------------------------------------
+
+def maps(water: Optional[str] = None, query: Optional[str] = None,
+         kind: Optional[str] = None) -> list[dict]:
+    """Return cross-reference map PDFs, optionally filtered.
+
+    `water`: a water key / spot / place tag (matches the map_ref table).
+    `query`: free-text substring matched against title, filename, and text.
+    `kind`: filter by document type ('map', 'guide', 'newsletter', 'coupon').
+    Each result includes its `kind` and its `waters`, `spots`, `places` tags.
+    """
+    with _conn() as c:
+        sql = "SELECT DISTINCT m.* FROM map m"
+        params: list[str] = []
+        where: list[str] = []
+        if water:
+            sql += " JOIN map_ref r ON r.map_id = m.id"
+            where.append("r.value = ?")
+            params.append(water.strip().lower())
+        if kind:
+            where.append("m.kind = ?")
+            params.append(kind.strip().lower())
+        if query:
+            like = f"%{query}%"
+            where.append("(m.title LIKE ? OR m.filename LIKE ? OR m.text LIKE ?)")
+            params += [like, like, like]
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY m.title"
+        rows = _rows(c.execute(sql, params))
+
+        for m in rows:
+            refs = c.execute(
+                "SELECT kind, value FROM map_ref WHERE map_id = ?", (m["id"],)
+            ).fetchall()
+            m["waters"] = sorted(v for k, v in refs if k == "water")
+            m["spots"] = sorted(v for k, v in refs if k == "spot")
+            m["places"] = sorted(v for k, v in refs if k == "place")
+    return rows
