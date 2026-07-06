@@ -115,6 +115,7 @@ BOATS = [
         "bracket": "Yes (offshore)", "warranty": "\u2014",
         "price": "$89k firm (2015, live)",
         "price_sort": 89000,
+        "url": "https://www.craigslist.org/view/d/anacortes-21-silver-streak-hardtop/nVYzTMLAxDhvdAqTYGQsjo",
         "provenance": "listing",
         "source": "live listing + general",
         "tag": "b",
@@ -176,6 +177,11 @@ table.cmp tr.pick:hover td{background:#D2F0CE}
 table.cmp td.boat{font-weight:600;color:var(--ms-text)}
 table.cmp td.boat .brand{display:block;font-size:11px;color:var(--ms-text-secondary);
                          text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+table.cmp td a{color:var(--ms-blue-darker);text-decoration:none;font-weight:600;white-space:nowrap}
+table.cmp td a:hover{text-decoration:underline}
+
+.scroll-hint{display:none;font-size:12px;color:var(--ms-text-secondary);margin:0 0 8px;
+             font-style:italic}
 
 .prov{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;
       text-transform:uppercase;letter-spacing:.3px;margin-left:6px;vertical-align:middle}
@@ -201,9 +207,28 @@ table.cmp td.boat .brand{display:block;font-size:11px;color:var(--ms-text-second
 .bcard .picklabel{position:absolute;top:12px;right:14px;background:var(--ms-green);color:#fff;
                   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
                   padding:2px 9px;border-radius:10px}
+.bcard .listing{margin-top:12px}
+.bcard .listing a{display:inline-block;background:var(--ms-blue);color:#fff;font-size:12px;
+                  font-weight:600;padding:6px 14px;border-radius:4px;text-decoration:none}
+.bcard .listing a:hover{background:var(--ms-blue-darker)}
 
 footer.fun{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
            border-top:1px solid var(--ms-border);background:#fff;text-align:center}
+
+/* --- Mobile --- */
+@media (max-width:640px){
+  header.page{padding:16px 18px}
+  header.page h1{font-size:19px}
+  nav.tabs{padding:0 12px}
+  .section-pad{padding:14px 16px}
+  .scroll-hint{display:block}
+  .cmp-wrap{-webkit-overflow-scrolling:touch}
+  table.cmp{min-width:720px;font-size:12px}
+  table.cmp th,table.cmp td{padding:7px 9px}
+  .legend{gap:10px;margin:12px 0 18px}
+  .detail-grid{grid-template-columns:1fr;gap:12px}
+  footer.fun{padding:16px 18px}
+}
 """
 
 
@@ -244,8 +269,15 @@ def _row(b: dict) -> str:
                 f"<td class='num' data-sort='{_sort_val(val)}'>{_num(val)}</td>"
             )
         elif key == "price":
+            url = b.get("url")
+            price_html = _h(str(val))
+            if url:
+                price_html = (
+                    f"<a href='{_h(url)}' target='_blank' rel='noopener noreferrer'>"
+                    f"{price_html}&nbsp;\u2197</a>"
+                )
             cells.append(
-                f"<td data-sort='{b.get('price_sort', 0)}'>{_h(str(val))}</td>"
+                f"<td data-sort='{b.get('price_sort', 0)}'>{price_html}</td>"
             )
         else:
             cells.append(f"<td data-sort='{_h(str(val))}'>{_h(str(val))}</td>")
@@ -267,6 +299,12 @@ def _header_row() -> str:
 def _detail_card(b: dict) -> str:
     pick = b.get("pick")
     picklabel = "<div class='picklabel'>Top value</div>" if pick else ""
+    url = b.get("url")
+    listing = (
+        f"<div class='listing'><a href='{_h(url)}' target='_blank' "
+        f"rel='noopener noreferrer'>View live listing \u2197</a></div>"
+        if url else ""
+    )
     return (
         f"<div class='bcard{' pick' if pick else ''}'>"
         f"{picklabel}"
@@ -275,6 +313,7 @@ def _detail_card(b: dict) -> str:
         f"<div class='price'>{_h(b.get('price',''))}</div>"
         f"<div class='fit'>{_h(b.get('fit',''))}</div>"
         f"<div class='src'>Data: {_h(b.get('source',''))}</div>"
+        f"{listing}"
         "</div>"
     )
 
@@ -349,6 +388,7 @@ def build_boats_html() -> str:
         f"<div class='pill-row'>{''.join(pills)}</div>"
         "</section>"
         "<section class='section-pad'>"
+        "<div class='scroll-hint'>\u2190 swipe the table sideways to compare specs \u2192</div>"
         "<div class='cmp-wrap'>"
         f"<table class='cmp' id='cmp'><thead>{_header_row()}</thead>"
         f"<tbody>{rows}</tbody></table>"
