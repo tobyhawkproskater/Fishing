@@ -26,6 +26,7 @@ NAV_LINKS = [
     ("Forecast",     "index.html",  "forecast"),
     ("Mobile",       "mobile.html", "mobile"),
     ("Fishing Gear", "gear.html",   "gear"),
+    ("Boats",        "boats.html",  "boats"),
 ]
 
 

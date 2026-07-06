@@ -1,0 +1,211 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Boat Comparison</title><style>
+:root{
+  /* Brand blues */
+  --ms-blue:#0078D4; --ms-blue-dark:#106EBE; --ms-blue-darker:#005A9E;
+  --ms-cyan:#00BCF2; --ms-teal:#008272; --ms-purple:#5C2D91;
+  /* Neutrals */
+  --ms-bg:#FAF9F8; --ms-card:#FFFFFF; --ms-border:#E1DFDD; --ms-divider:#EDEBE9;
+  --ms-text:#201F1E; --ms-text-secondary:#605E5C; --ms-text-disabled:#A19F9D;
+  /* Status */
+  --ms-green:#107C10; --ms-yellow:#F2C811; --ms-orange:#D83B01; --ms-red:#A4262C;
+  /* Elevation */
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.08);
+  --shadow-md:0 3px 8px rgba(0,0,0,0.12);
+  --shadow-lg:0 6.4px 14.4px rgba(0,0,0,0.13), 0 1.2px 3.6px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI','Segoe UI Web','Segoe WP',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+     font-size:14px;line-height:1.45;color:var(--ms-text);background:var(--ms-bg)}
+
+/* Header */
+header.page{background:linear-gradient(135deg,var(--ms-blue-darker) 0%,var(--ms-blue) 60%,var(--ms-cyan) 110%);
+            color:#fff;padding:20px 32px;box-shadow:var(--shadow-md);
+            position:sticky;top:0;z-index:50}
+header.page h1{margin:0;font-size:22px;font-weight:600;display:flex;align-items:center}
+header.page .meta{margin-top:4px;font-size:13px;opacity:.92}
+.brand-logo{display:inline-grid;grid-template-columns:repeat(2,10px);gap:2px;margin-right:10px;vertical-align:middle}
+.brand-logo span{width:10px;height:10px;display:block}
+.brand-logo span:nth-child(1){background:#F25022}
+.brand-logo span:nth-child(2){background:#7FBA00}
+.brand-logo span:nth-child(3){background:#00A4EF}
+.brand-logo span:nth-child(4){background:#FFB900}
+
+/* Tab nav */
+nav.tabs{background:#fff;border-bottom:1px solid var(--ms-border);padding:0 32px;
+         position:sticky;top:64px;z-index:40;display:flex;gap:4px;overflow-x:auto;
+         box-shadow:var(--shadow-sm)}
+nav.tabs a{color:var(--ms-text-secondary);text-decoration:none;font-weight:600;font-size:13px;
+           padding:12px 14px;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a:hover{color:var(--ms-blue)}
+nav.tabs a.active{color:var(--ms-blue);border-bottom-color:var(--ms-blue)}
+
+/* Water section */
+.water{padding:24px 32px;border-bottom:1px solid var(--ms-divider)}
+.water h2{margin:0 0 4px;font-size:20px;font-weight:600;color:var(--ms-blue);
+          border-bottom:2px solid var(--ms-blue);padding-bottom:6px;display:inline-block}
+.water .sub{color:var(--ms-text-secondary);font-size:13px;margin:4px 0 16px}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+     padding:14px 16px;position:relative;box-shadow:var(--shadow-sm);overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ms-blue)}
+.kpi.green::before{background:var(--ms-green)}
+.kpi.yellow::before{background:var(--ms-yellow)}
+.kpi.orange::before{background:var(--ms-orange)}
+.kpi.red::before{background:var(--ms-red)}
+.kpi.purple::before{background:var(--ms-purple)}
+.kpi.teal::before{background:var(--ms-teal)}
+.kpi .lbl{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+          letter-spacing:.5px;font-weight:600;margin-bottom:4px}
+.kpi .val{font-size:28px;font-weight:600;color:var(--ms-text);line-height:1.1}
+.kpi .sub{font-size:12px;color:var(--ms-text-secondary);margin-top:4px}
+
+/* Grid of detail cards */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:1000px){.grid{grid-template-columns:1fr}}
+.card{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+      padding:16px 18px;box-shadow:var(--shadow-sm)}
+.card h3{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--ms-purple);
+         text-transform:uppercase;letter-spacing:.5px}
+
+/* Tables */
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+table.dt th,table.dt td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--ms-divider)}
+table.dt th{background:#F3F2F1;color:var(--ms-text-secondary);font-weight:600;font-size:12px;
+            text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0}
+table.dt tr:hover td{background:#F3F2F1}
+table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt tr:last-child td{border-bottom:none}
+
+/* Wind heatmap cells */
+.wind-cell-low{background:#DFF6DD;color:#0B6A0B;font-weight:600}
+.wind-cell-mod{background:#FFF4CE;color:#796300;font-weight:600}
+.wind-cell-high{background:#FED9B7;color:#8A2900;font-weight:600}
+.wind-cell-xhigh{background:#FDE7E9;color:#8E1F25;font-weight:700}
+
+/* Badges & tags */
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;
+       font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#fff;margin-right:6px}
+.badge.b{background:var(--ms-blue)} .badge.g{background:var(--ms-green)}
+.badge.o{background:var(--ms-orange)} .badge.r{background:var(--ms-red)}
+.badge.p{background:var(--ms-purple)} .badge.t{background:var(--ms-teal)}
+.badge.y{background:var(--ms-yellow);color:#3B2F00}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;
+     letter-spacing:.3px;margin-right:6px}
+.tag.b{background:#DEECF9;color:var(--ms-blue-darker)}
+.tag.g{background:#DFF6DD;color:#0B6A0B}
+.tag.r{background:#FDE7E9;color:#8E1F25}
+.tag.o{background:#FED9B7;color:#8A2900}
+.tag.y{background:#FFF4CE;color:#796300}
+.tag.p{background:#E8D6F2;color:#3B1854}
+
+/* Tides */
+.tide-up{color:var(--ms-blue-darker);font-weight:600}
+.tide-dn{color:var(--ms-orange);font-weight:600}
+
+/* Misc */
+.dim{color:var(--ms-text-secondary)}
+pre{background:#F3F2F1;color:var(--ms-text);padding:10px 12px;border-radius:4px;
+    overflow:auto;font-size:12px;max-height:280px;border:1px solid var(--ms-border)}
+details{margin-top:8px}
+details summary{cursor:pointer;color:var(--ms-blue);font-size:13px;font-weight:600}
+ul{margin:6px 0;padding-left:20px}
+li{margin:4px 0}
+footer{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
+       border-top:1px solid var(--ms-border);background:#fff}
+
+/* Boats-page tweaks (boats.html) */
+.hero{padding:28px 32px 8px;background:linear-gradient(135deg,#004578 0%,#005A9E 55%,#0078D4 100%);
+      color:#fff}
+.hero h1{margin:0;font-size:28px;font-weight:600}
+.hero .sub{opacity:.9;margin-top:6px;font-size:14px;max-width:760px}
+.hero .pill-row{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.hero .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);
+            color:#fff;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;
+            letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px}
+.hero .pill b{font-weight:700;font-size:13px}
+.section-pad{padding:24px 32px}
+@media (max-width:640px){.hero{padding:20px 16px 6px} .hero h1{font-size:22px}
+  .section-pad{padding:16px}}
+
+.cmp-wrap{overflow-x:auto;border:1px solid var(--ms-border);border-radius:6px;
+          box-shadow:var(--shadow-sm);background:#fff;margin-bottom:8px}
+table.cmp{width:100%;border-collapse:collapse;font-size:13px;min-width:920px}
+table.cmp th,table.cmp td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--ms-divider);
+                          white-space:nowrap}
+table.cmp th{background:#F3F2F1;color:var(--ms-text-secondary);font-weight:600;font-size:12px;
+             text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;cursor:pointer;
+             user-select:none}
+table.cmp th:hover{color:var(--ms-blue)}
+table.cmp th .arrow{color:var(--ms-blue);font-size:10px;margin-left:4px;opacity:.5}
+table.cmp th.sorted .arrow{opacity:1}
+table.cmp td.num,table.cmp th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.cmp tr:hover td{background:#F8F7F6}
+table.cmp tr.pick td{background:#DFF6DD}
+table.cmp tr.pick:hover td{background:#D2F0CE}
+table.cmp td.boat{font-weight:600;color:var(--ms-text)}
+table.cmp td.boat .brand{display:block;font-size:11px;color:var(--ms-text-secondary);
+                         text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+
+.prov{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;
+      text-transform:uppercase;letter-spacing:.3px;margin-left:6px;vertical-align:middle}
+.prov.verified{background:#DFF6DD;color:#0B6A0B}
+.prov.approx{background:#FFF4CE;color:#796300}
+.prov.listing{background:#DEECF9;color:var(--ms-blue-darker)}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 22px;font-size:12px;
+        color:var(--ms-text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.bcard{background:#fff;border:1px solid var(--ms-border);border-radius:10px;padding:16px 18px;
+       box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--ms-blue)}
+.bcard.pick::before{background:var(--ms-green)}
+.bcard .brand{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+              letter-spacing:.5px;font-weight:600}
+.bcard .model{font-size:17px;font-weight:600;color:var(--ms-text);margin:2px 0 0;line-height:1.2}
+.bcard .price{font-size:13px;font-weight:600;color:var(--ms-blue-darker);margin-top:6px}
+.bcard .fit{margin-top:10px;font-size:12.5px;color:var(--ms-text);line-height:1.5}
+.bcard .src{margin-top:10px;font-size:11px;color:var(--ms-text-secondary);font-style:italic}
+.bcard .picklabel{position:absolute;top:12px;right:14px;background:var(--ms-green);color:#fff;
+                  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+                  padding:2px 9px;border-radius:10px}
+
+footer.fun{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
+           border-top:1px solid var(--ms-border);background:#fff;text-align:center}
+</style></head><body><header class='page'><h1><div class='brand-logo'><span></span><span></span><span></span><span></span></div>Boat Comparison</h1><div class='meta'>6 shortlist boats · updated 2026-07-06 16:21</div></header><nav class='tabs'><a class='' href='index.html'>Forecast</a><a class='' href='mobile.html'>Mobile</a><a class='' href='gear.html'>Fishing Gear</a><a class='active' href='boats.html'>Boats</a></nav><section class='hero'><h1>Boat Shortlist ⚓</h1><div class='sub'>The 20–22' welded-aluminum hardtop-cabin boats in the running — click any column header to sort. Deciding specs for your use: shallow draft (dry weight), ride quality (deadrise + weight), and beam/stability.</div><div class='pill-row'><span class='pill'>Boats&nbsp;<b>6</b></span><span class='pill'>Target&nbsp;<b>20–22' aluminum hardtop</b></span><span class='pill'>Budget&nbsp;<b>$40–55k</b></span><span class='pill'>Verified specs&nbsp;<b>3/6</b></span></div></section><section class='section-pad'><div class='cmp-wrap'><table class='cmp' id='cmp'><thead><tr><th class='' data-col='0' data-numeric='0'>Boat<span class='arrow'>▴▾</span></th><th class='' data-col='1' data-numeric='0'>LOA<span class='arrow'>▴▾</span></th><th class='' data-col='2' data-numeric='0'>Beam<span class='arrow'>▴▾</span></th><th class='' data-col='3' data-numeric='0'>Deadrise<span class='arrow'>▴▾</span></th><th class='' data-col='4' data-numeric='0'>Bottom<span class='arrow'>▴▾</span></th><th class='' data-col='5' data-numeric='0'>Sides<span class='arrow'>▴▾</span></th><th class='num' data-col='6' data-numeric='1'>Dry (lb)<span class='arrow'>▴▾</span></th><th class='num' data-col='7' data-numeric='1'>Fuel (gal)<span class='arrow'>▴▾</span></th><th class='num' data-col='8' data-numeric='1'>Max HP<span class='arrow'>▴▾</span></th><th class='' data-col='9' data-numeric='0'>Bracket<span class='arrow'>▴▾</span></th><th class='' data-col='10' data-numeric='0'>Warranty<span class='arrow'>▴▾</span></th><th class='' data-col='11' data-numeric='0'>Price<span class='arrow'>▴▾</span></th></tr></thead><tbody><tr><td class='boat' data-sort='Intruder 22 (Hardtop)'><span class='brand'>Alumaweld</span>Intruder 22 (Hardtop)<span class='prov verified'>verified</span></td><td data-sort='24&#x27;9&quot;'>24&#x27;9&quot;</td><td data-sort='8&#x27;3.5&quot;'>8&#x27;3.5&quot;</td><td data-sort='18°'>18°</td><td data-sort='.190&quot;'>.190&quot;</td><td data-sort='.125&quot;'>.125&quot;</td><td class='num' data-sort='2475'>2,475</td><td class='num' data-sort='60'>60</td><td class='num' data-sort='225'>225</td><td data-sort='Yes (Alumadrive)'>Yes (Alumadrive)</td><td data-sort='Limited'>Limited</td><td data-sort='90000'>New ~$90k+ · best used value</td></tr><tr><td class='boat' data-sort='Coho 21&#x27; Hard Top'><span class='brand'>North River</span>Coho 21&#x27; Hard Top<span class='prov verified'>verified</span></td><td data-sort='23&#x27;2&quot;'>23&#x27;2&quot;</td><td data-sort='8&#x27;6&quot;'>8&#x27;6&quot;</td><td data-sort='18°'>18°</td><td data-sort='.190&quot;'>.190&quot;</td><td data-sort='.160&quot;'>.160&quot;</td><td class='num' data-sort='2800'>2,800</td><td class='num' data-sort='70'>70</td><td class='num' data-sort='300'>300</td><td data-sort='Yes (standard)'>Yes (standard)</td><td data-sort='7-yr hull'>7-yr hull</td><td data-sort='79995'>$79,995 new (turnkey)</td></tr><tr><td class='boat' data-sort='Seahawk 22&#x27; (Hardtop)'><span class='brand'>North River</span>Seahawk 22&#x27; (Hardtop)<span class='prov verified'>verified</span></td><td data-sort='~24&#x27;'>~24&#x27;</td><td data-sort='8&#x27;6&quot;'>8&#x27;6&quot;</td><td data-sort='18°'>18°</td><td data-sort='.250&quot;'>.250&quot;</td><td data-sort='.160&quot;'>.160&quot;</td><td class='num' data-sort='2700'>2,700</td><td class='num' data-sort='80'>80</td><td class='num' data-sort='300'>300</td><td data-sort='Yes (standard)'>Yes (standard)</td><td data-sort='Lifetime hull'>Lifetime hull</td><td data-sort='75000'>Used ~$60–98k</td></tr><tr><td class='boat' data-sort='2325 Coastal Express'><span class='brand'>KingFisher</span>2325 Coastal Express<span class='prov approx'>approx</span></td><td data-sort='~23&#x27;'>~23&#x27;</td><td data-sort='8&#x27;6&quot;'>8&#x27;6&quot;</td><td data-sort='16° (var.)'>16° (var.)</td><td data-sort='.190&quot;'>.190&quot;</td><td data-sort='.160&quot;'>.160&quot;</td><td class='num' data-sort='3200'>~3,200</td><td class='num' data-sort='70'>~70</td><td class='num' data-sort='300'>~300</td><td data-sort='Yes (full-width)'>Yes (full-width)</td><td data-sort='Lifetime hull'>Lifetime hull</td><td data-sort='120000'>~$120k+ new</td></tr><tr class='pick'><td class='boat' data-sort='Navigator 21&#x27;'><span class='brand'>Duckworth</span>Navigator 21&#x27;<span class='prov listing'>listing</span></td><td data-sort='~23&#x27; w/ bracket'>~23&#x27; w/ bracket</td><td data-sort='~8&#x27;6&quot;'>~8&#x27;6&quot;</td><td data-sort='High (deep-V)'>High (deep-V)</td><td data-sort='~.190–.250&quot;'>~.190–.250&quot;</td><td data-sort='~.190&quot;'>~.190&quot;</td><td class='num' data-sort='3000'>~3,000+</td><td class='num' data-sort='42'>42</td><td class='num' data-sort='115250'>~115–250</td><td data-sort='Varies'>Varies</td><td data-sort='Used'>Used</td><td data-sort='55000'>$55k (2015, live)</td></tr><tr><td class='boat' data-sort='21&#x27; Hardtop'><span class='brand'>Silver Streak</span>21&#x27; Hardtop<span class='prov listing'>listing</span></td><td data-sort='21&#x27; (23.5&#x27; w/ bracket)'>21&#x27; (23.5&#x27; w/ bracket)</td><td data-sort='8&#x27;6&quot;'>8&#x27;6&quot;</td><td data-sort='—'>—</td><td data-sort='7&#x27; w/ reverse chines'>7&#x27; w/ reverse chines</td><td data-sort='—'>—</td><td class='num' data-sort='0'>—</td><td class='num' data-sort='0'>—</td><td class='num' data-sort='0'>—</td><td data-sort='Yes (offshore)'>Yes (offshore)</td><td data-sort='—'>—</td><td data-sort='89000'>$89k firm (2015, live)</td></tr></tbody></table></div><div class='legend'><span><span class='prov verified'>verified</span> spec sheet / catalog / builder site</span><span><span class='prov listing'>listing</span> from a live for-sale ad</span><span><span class='prov approx'>approx</span> model-family figure (site JS-blocked); “~” = approximate</span></div><div class='detail-grid'><div class='bcard'><div class='brand'>Alumaweld</div><div class='model'>Intruder 22 (Hardtop)</div><div class='price'>New ~$90k+ · best used value</div><div class='fit'>Lightest hull → best sand-flat draft and beaching. Tradeoffs: thinnest sides (.125&quot;), narrower 8&#x27;3.5&quot; beam, and a 225 HP cap. Offered as DuraFrame Sport Top or hardtop — matches your open-hardtop want.</div><div class='src'>Data: 2026 catalog PDF</div></div><div class='bcard'><div class='brand'>North River</div><div class='model'>Coho 21&#x27; Hard Top</div><div class='price'>$79,995 new (turnkey)</div><div class='fit'>Your style favorite and an attainable NEW number. Open-bow hardtop; comes standard with 150 HP + trailer + hydraulic steering + offshore bracket. Cockpit is smaller (66&quot;) than the bigger hulls.</div><div class='src'>Data: dealer PDF</div></div><div class='bcard'><div class='brand'>North River</div><div class='model'>Seahawk 22&#x27; (Hardtop)</div><div class='price'>Used ~$60–98k</div><div class='fit'>Thickest bottom (.250&quot;) + lifetime warranty = the stoutest, softest-riding hull on the list. Premium price; the loaded 2019 listing was $98k. Buy older/plainer to stay in budget.</div><div class='src'>Data: dealer PDF</div></div><div class='bcard'><div class='brand'>KingFisher</div><div class='model'>2325 Coastal Express</div><div class='price'>~$120k+ new</div><div class='fit'>Value-quality middle ground. Flatter 16° hull = slightly firmer offshore ride but very stable. Helm-side door common (great for solo docking/buoy pickup).</div><div class='src'>Data: family specs verified; model figures approx</div></div><div class='bcard pick'><div class='picklabel'>Top value</div><div class='brand'>Duckworth</div><div class='model'>Navigator 21&#x27;</div><div class='price'>$55k (2015, live)</div><div class='fit'>Stoutest hull + softest heavy-V ride, but deepest draft = worst sand-flat beaching (the one unfixable tradeoff). The live 2015 unit nails your dream rig: Yamaha 115 + T9.9 kicker, ~319 hrs, offshore-proven out of Westport.</div><div class='src'>Data: general + live listing (no verified spec sheet)</div></div><div class='bcard'><div class='brand'>Silver Streak</div><div class='model'>21&#x27; Hardtop</div><div class='price'>$89k firm (2015, live)</div><div class='fit'>Premium BC tank. True reverse chines = very stable + dry ride, 7 gph @ 30 mph. Over budget, but a useful quality/ride benchmark to measure the others against.</div><div class='src'>Data: live listing + general</div></div></div></section><footer class='fun'>Refresh this chart by editing the <code>BOATS</code> list in <code>src/fishing/html_boats.py</code> and rerunning <code>python -m fishing.html_boats boats docs/boats.html</code>.</footer>
+<script>
+(function(){
+  var table=document.getElementById('cmp');
+  if(!table) return;
+  var tbody=table.tBodies[0];
+  var ths=table.tHead.rows[0].cells;
+  var state={col:-1,dir:1};
+  function val(row,col,numeric){
+    var td=row.cells[col];
+    var s=td.getAttribute('data-sort');
+    if(numeric) return parseFloat(s)||0;
+    return (s||td.textContent).toLowerCase();
+  }
+  function sortBy(col){
+    var numeric=ths[col].getAttribute('data-numeric')==='1';
+    if(state.col===col){state.dir*=-1;}else{state.col=col;state.dir=1;}
+    var rows=Array.prototype.slice.call(tbody.rows);
+    rows.sort(function(a,b){
+      var x=val(a,col,numeric), y=val(b,col,numeric);
+      if(x<y) return -1*state.dir;
+      if(x>y) return 1*state.dir;
+      return 0;
+    });
+    rows.forEach(function(r){tbody.appendChild(r);});
+    for(var i=0;i<ths.length;i++){ths[i].classList.toggle('sorted',i===col);}
+  }
+  for(var i=0;i<ths.length;i++){
+    (function(idx){ths[idx].addEventListener('click',function(){sortBy(idx);});})(i);
+  }
+})();
+</script>
+</body></html>

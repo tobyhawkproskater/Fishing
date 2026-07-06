@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from . import ROOT
+from .html_boats import build_boats_html
 from .html_loadout import build_gear_html
 from .html_report_ma9 import _assemble, build_html as build_desktop
 from .html_report_ma9_mobile import build_html as build_mobile
@@ -87,6 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     gear_path = desktop_path.parent / "gear.html"
     gear_path.write_text(build_gear_html(), encoding="utf-8")
     print(f"Wrote {gear_path} ({gear_path.stat().st_size:,} bytes)")
+
+    # Boat shopping comparison tab. Static shortlist (no live data).
+    boats_path = desktop_path.parent / "boats.html"
+    boats_path.write_text(build_boats_html(), encoding="utf-8")
+    print(f"Wrote {boats_path} ({boats_path.stat().st_size:,} bytes)")
 
     return 0
 
