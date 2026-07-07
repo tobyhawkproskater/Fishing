@@ -55,25 +55,34 @@ BOATS = [
         "provenance": "verified",
         "source": "dealer PDF",
         "tag": "g",
-        "fit": "Your style favorite and an attainable NEW number. Open-bow "
-               "hardtop; comes standard with 150 HP + trailer + hydraulic "
-               "steering + offshore bracket. Cockpit is smaller (66\") than the "
-               "bigger hulls.",
+        "fit": "The only true ~21' factory hardtop, and an attainable NEW "
+               "number. Note it's North River's VALUE tier: .190\" bottom + "
+               "7-yr warranty (vs the Seahawk's .250\" + lifetime). Comes "
+               "standard with 150 HP + trailer + hydraulic steering + offshore "
+               "bracket. Cockpit is smaller (66\") than the bigger hulls.",
     },
     {
-        "brand": "North River", "model": "Seahawk 22' (Hardtop)",
-        "loa": "~24'", "beam": "8'6\"", "deadrise": "18\u00b0",
+        "brand": "North River", "model": "Seahawk Outboard 21'",
+        "loa": "23'2\"", "beam": "8'6\"", "deadrise": "18\u00b0 (42\u00b0 entry)",
         "bottom": ".250\"", "sides": ".160\"",
-        "dry": 2700, "fuel": 80, "hp": 300,
-        "bracket": "Yes (standard)", "warranty": "Lifetime hull",
+        "dry": 2680, "fuel": 70, "hp": 300,
+        "bracket": "Yes (offshore, std)", "warranty": "Lifetime hull",
         "price": "Used ~$60\u201398k",
-        "price_sort": 75000,
+        "price_sort": 72000,
         "provenance": "verified",
-        "source": "dealer PDF",
+        "source": "2025 Seahawk spec sheet",
         "tag": "p",
-        "fit": "Thickest bottom (.250\") + lifetime warranty = the stoutest, "
-               "softest-riding hull on the list. Premium price; the loaded 2019 "
-               "listing was $98k. Buy older/plainer to stay in budget.",
+        "fit": "Best-built hull here: .250\" bottom + towering 35\" sides + "
+               "North River's LIFETIME hull warranty (vs the Coho's .190\" / "
+               "7-yr \u2014 same brand, value tier). 42\u00b0 entry / 18\u00b0 transom = "
+               "soft, dry ride; verified offshore bracket. Ships with a deluxe "
+               "FOLDING (soft) top standard \u2014 add the rigid removable top for a "
+               "hardtop that pops off for sled-like deck space. The only catch: "
+               "a true enclosed hardtop in this line means stepping up to the "
+               "23' Hard Top (25'2\" LOA, 3,060 lb). Premium price \u2014 buy "
+               "older/plainer to stay in budget.",
+        "pick": True,
+        "picklabel": "Top build",
     },
     {
         "brand": "KingFisher", "model": "2325 Coastal Express",
@@ -305,7 +314,10 @@ def _header_row() -> str:
 
 def _detail_card(b: dict) -> str:
     pick = b.get("pick")
-    picklabel = "<div class='picklabel'>Top value</div>" if pick else ""
+    picklabel = (
+        f"<div class='picklabel'>{_h(b.get('picklabel', 'Top value'))}</div>"
+        if pick else ""
+    )
     url = b.get("url")
     listing = (
         f"<div class='listing'><a href='{_h(url)}' target='_blank' "
