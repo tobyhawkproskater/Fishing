@@ -77,34 +77,41 @@ BOATS = [
     },
     {
         "brand": "KingFisher", "model": "2325 Coastal Express",
-        "loa": "~23'", "beam": "8'6\"", "deadrise": "16\u00b0 (var.)",
-        "bottom": ".190\"", "sides": ".160\"",
-        "dry": "~3,200", "fuel": "~70", "hp": "~300",
-        "bracket": "Yes (full-width)", "warranty": "Lifetime hull",
+        "loa": "24'", "beam": "8'", "deadrise": "16\u00b0 (var.)",
+        "bottom": ".190\"", "sides": ".125\"",
+        "dry": 2660, "fuel": 85, "hp": 250,
+        "bracket": "No (transom)", "warranty": "Lifetime hull",
         "price": "~$120k+ new",
         "price_sort": 120000,
-        "provenance": "approx",
-        "source": "family specs verified; model figures approx",
+        "provenance": "verified",
+        "source": "2026 KingFisher boat guide PDF",
         "tag": "t",
-        "fit": "Value-quality middle ground. Flatter 16\u00b0 hull = slightly "
-               "firmer offshore ride but very stable. Helm-side door common "
-               "(great for solo docking/buoy pickup).",
+        "fit": "Value-quality middle ground, now verified. Flatter 16\u00b0 "
+               "variable-deadrise hull = slightly firmer offshore ride but very "
+               "stable. Note it's TRANSOM-mounted (no bracket) \u2014 25\" transom, "
+               "step-thru \u2014 unlike the bracketed Duckworth/Alumaweld. Biggest "
+               "tank here (85 gal) and a deep 6'2\" cockpit; pilot-house cabin "
+               "(7'2\", 6'1\" headroom). Capped at 250 HP.",
     },
     {
-        "brand": "Duckworth", "model": "Navigator 21'",
-        "loa": "~23' w/ bracket", "beam": "~8'6\"", "deadrise": "High (deep-V)",
-        "bottom": "~.190\u2013.250\"", "sides": "~.190\"",
-        "dry": "~3,000+", "fuel": 42, "hp": "~115\u2013250",
-        "bracket": "Varies", "warranty": "Used",
+        "brand": "Duckworth", "model": "Pacific Navigator 215",
+        "loa": "23'6\"", "beam": "8'6\"", "deadrise": "18\u00b0 (34\u00b0 bow)",
+        "bottom": ".190\"", "sides": ".125\"",
+        "dry": 2270, "fuel": 65, "hp": 300,
+        "bracket": "Yes (25\" offshore, std)", "warranty": "\u2014",
         "price": "$55k (2015, live)",
         "price_sort": 55000,
-        "provenance": "listing",
-        "source": "general + live listing (no verified spec sheet)",
+        "provenance": "verified",
+        "source": "2015 Duckworth model guide PDF",
         "tag": "o",
-        "fit": "Stoutest hull + softest heavy-V ride, but deepest draft = "
-               "worst sand-flat beaching (the one unfixable tradeoff). The live "
-               "2015 unit nails your dream rig: Yamaha 115 + T9.9 kicker, "
-               "~319 hrs, offshore-proven out of Westport.",
+        "fit": "Verified-spec correction: at 2,270 lb dry it's the LIGHTEST hull "
+               "here \u2014 not the deep-draft pig I'd assumed \u2014 with a full "
+               "reverse-chine bottom, wide 8'6\" beam, and an aggressive 34\u00b0 bow "
+               "entry for a soft open-water ride. Standard 25\" offshore bracket. "
+               "The live 2015 unit nails your dream rig: Yamaha 115 + T9.9 kicker, "
+               "~319 hrs, offshore-proven out of Westport. (Confirm the exact model "
+               "\u2014 its 42-gal tank vs the 215's 65-gal standard hints it may be a "
+               "Navigator 200/Sport.)",
         "pick": True,
     },
     {
