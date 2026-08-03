@@ -1,6 +1,6 @@
 """MA9-only 7-day report with a tide x weather fishability heatmap.
 
-Scoring model (per hour, civil dawn - civil dusk, per water lat/lon):
+Scoring model (per daylight hour, 5 AM - 9 PM PT):
     score = wind_score * precip_score * (0.4 + 0.6 * tide_score)
 where
     tide_score   = 1.0 at slack (nearest H/L), linearly to 0 at the edge of
@@ -59,15 +59,10 @@ from .html_report import (
     CSS, _deg_to_compass, _fmt, _h, _kind_tag, _render_buoy,
     _render_rules, _render_tides, _group_tides_by_day, _wind_cell_class,
 )
-from .sun import sun_times as _sun_times, hour_of_day as _hod, fmt_clock as _sun_clock
 
 DAYS = 7
-# Grid spans civil twilight (sun 6° below horizon) through civil dusk at PNW
-# latitudes year-round (summer civil dawn ~4:30 AM, civil dusk ~9:55 PM).
-# Cells outside a given day's actual first/last-light window are visually
-# dimmed in the heatmap.
-HOUR_START = 4   # 4 AM PT
-HOUR_END = 21    # 9 PM PT inclusive label
+HOUR_START = 5   # 5 AM PT
+HOUR_END = 21    # 9 PM PT inclusive label, exclusive end
 WATER_KEY = "ma9"
 
 
@@ -86,6 +81,46 @@ WATER_KEY = "ma9"
 # the whole day is fishable regardless of tide phase.
 
 CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF = "green", "yellow", "red", "off"
+
+
+# --- Species profile --------------------------------------------------------
+# Chinook (kings, May-Jul) hold near bottom and stack on slack -> heavy tide
+# weight. Coho (silvers, Aug-Oct) are pelagic surface feeders that chase
+# bait balls in moving water -> raise the tide-floor so mid-tide is not dead,
+# and relax the calm-end wind cutoffs by ~2-3 mph because a light chop
+# concentrates bait. Top-end (windy) cutoffs stay put — Toby doesn't love
+# fishing when it's really windy, even if the fish are biting.
+TARGET_CHINOOK = {
+    "key": "chinook",
+    "label": "CHINOOK",
+    "tide_floor": 0.4,
+    "sustained_tiers": ((10, 1.0), (15, 0.7), (25, 0.3), (float("inf"), 0.0)),
+    "gust_tiers":      ((15, 1.0), (20, 0.7), (25, 0.3), (float("inf"), 0.0)),
+    "green_wind_max": 10,   # slack + wind < N AND gust < green_gust_max -> GREEN
+    "green_gust_max": 20,
+    "yellow_wind_max": 15,  # slack + wind < N -> YELLOW (else RED)
+    "formula_str": "0.4 + 0.6 &times; tide_score",
+    "sustained_str": "&lt;10 / &lt;15 / &lt;25 / &ge;25 mph",
+    "gust_str": "&lt;15 / &lt;20 / &lt;25 / &ge;30 mph",
+}
+TARGET_COHO = {
+    "key": "coho",
+    "label": "COHO",
+    "tide_floor": 0.6,
+    "sustained_tiers": ((12, 1.0), (17, 0.7), (25, 0.3), (float("inf"), 0.0)),
+    "gust_tiers":      ((18, 1.0), (22, 0.7), (28, 0.3), (float("inf"), 0.0)),
+    "green_wind_max": 12,
+    "green_gust_max": 20,
+    "yellow_wind_max": 17,
+    "formula_str": "0.6 + 0.4 &times; tide_score",
+    "sustained_str": "&lt;12 / &lt;17 / &lt;25 / &ge;25 mph",
+    "gust_str": "&lt;18 / &lt;22 / &lt;28 / &ge;30 mph",
+}
+
+
+def _target_profile(day: dt.date) -> dict:
+    """Aug 1 - Oct 31 -> Coho profile; otherwise Chinook."""
+    return TARGET_COHO if 8 <= day.month <= 10 else TARGET_CHINOOK
 
 
 def _nearest_tide(hour_iso: str, tide_events: list[dict]) -> tuple[Optional[float], Optional[dict]]:
@@ -187,29 +222,23 @@ def _tide_score(minutes_to_slack: Optional[float], half_window_min: float = 60.0
     return max(0.0, 1.0 - minutes_to_slack / half_window_min)
 
 
-def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float]) -> float:
+def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float],
+                profile: dict = TARGET_CHINOOK) -> float:
     # Score sustained and gust separately, take the worse so a calm-but-gusty
-    # hour (e.g. wind 4, gust 25) can't be mislabeled PRIME. Thresholds chosen
-    # to align with `_classify` (heatmap PRIME requires the same wind/gust
-    # ceiling as a GREEN tide-curve segment).
-    #   Sustained:  <10 / <15 / <25 / >=25 mph -> 1.0 / 0.7 / 0.3 / 0.0
-    #   Gust:       <15 / <20 / <25 / >=30 mph -> 1.0 / 0.7 / 0.3 / 0.0
-    # Round to whole mph FIRST so the score matches the displayed gust value
-    # (a gust of 14.6 is shown as "15" in tooltips and must score as 15, not
-    # sneak under the <15 threshold as 14.6).
+    # hour (e.g. wind 4, gust 25) can't be mislabeled PRIME. Tier tables come
+    # from the species profile so the numbers stay in one place. Round to
+    # whole mph FIRST so the score matches the displayed gust value.
     w_raw = wind_mph if wind_mph is not None else 0.0
     g_raw = gust_mph if gust_mph is not None else w_raw
     w = int(round(w_raw))
     g = int(round(g_raw))
-    if w < 10:   sw = 1.0
-    elif w < 15: sw = 0.7
-    elif w < 25: sw = 0.3
-    else:        sw = 0.0
-    if g < 15:   gw = 1.0
-    elif g < 20: gw = 0.7
-    elif g < 25: gw = 0.3
-    else:        gw = 0.0
-    return min(sw, gw)
+    def _tier(v: int, tiers) -> float:
+        for thresh, sc in tiers:
+            if v < thresh:
+                return sc
+        return 0.0
+    return min(_tier(w, profile["sustained_tiers"]),
+               _tier(g, profile["gust_tiers"]))
 
 
 def _precip_score(precip_in: Optional[float]) -> float:
@@ -220,6 +249,7 @@ def _precip_score(precip_in: Optional[float]) -> float:
 def _window_heart(
     lo: float, hi: float, day_date: dt.date,
     cells: list[dict], tide_events: list[dict],
+    tide_floor: float = 0.4,
 ) -> Optional[tuple[dt.datetime, float, dict]]:
     """Return the score-weighted center-of-mass minute of a Prime/Good window.
 
@@ -260,7 +290,7 @@ def _window_heart(
             before_win, after_win = _slack_half_windows(ev, tide_events)
             half_win = after_win if m >= ev_t else before_win
             ts = _tide_score(mins, half_win)
-            score = ws * ps * (0.4 + 0.6 * ts)
+            score = ws * ps * (tide_floor + (1.0 - tide_floor) * ts)
             idx = hh * 60 + mm
             num += idx * score
             den += score
@@ -274,14 +304,15 @@ def _window_heart(
 
 
 def _classify(in_slack: bool, wind_mph: Optional[float],
-              gust_mph: Optional[float]) -> str:
+              gust_mph: Optional[float],
+              profile: dict = TARGET_CHINOOK) -> str:
     if not in_slack:
         return CAT_OFF
     w = wind_mph if wind_mph is not None else 0.0
     g = gust_mph if gust_mph is not None else 0.0
-    if w > 15 or g >= 20:
+    if w > profile["yellow_wind_max"] or g >= profile["green_gust_max"]:
         return CAT_RED
-    if w >= 10:
+    if w >= profile["green_wind_max"]:
         return CAT_YELLOW
     return CAT_GREEN
 
@@ -403,6 +434,7 @@ def _assemble(start: dt.date) -> dict:
         }
 
     w = WATERS[WATER_KEY]
+    profile = _target_profile(start)
     om = wind_blend(w.lat, w.lon, hours=DAYS * 24)
     if "error" in om or not om.get("hours"):
         # Last-ditch fallback to single-source Open-Meteo if the blend failed.
@@ -462,18 +494,7 @@ def _assemble(start: dt.date) -> dict:
 
     for di in range(DAYS):
         day = start + dt.timedelta(days=di)
-        sun = _sun_times(day, w.lat, w.lon)
-        sun_row = {
-            "civil_dawn": sun["civil_dawn"],
-            "sunrise":    sun["sunrise"],
-            "sunset":     sun["sunset"],
-            "civil_dusk": sun["civil_dusk"],
-            "civil_dawn_h": _hod(sun["civil_dawn"]),
-            "sunrise_h":    _hod(sun["sunrise"]),
-            "sunset_h":     _hod(sun["sunset"]),
-            "civil_dusk_h": _hod(sun["civil_dusk"]),
-        }
-        row = {"date": day, "cells": [], "sun": sun_row}
+        row = {"date": day, "cells": []}
         run: list[dict] = []
         for hr in range(HOUR_START, HOUR_END + 1):
             key = f"{day.isoformat()}T{hr:02d}:00"
@@ -497,12 +518,14 @@ def _assemble(start: dt.date) -> dict:
                     half_win = max(before_win, after_win)
             in_slack = mins is not None and mins <= half_win
             ts = _tide_score(mins, half_win)
-            ws = _wind_score(wind, gust)
+            ws = _wind_score(wind, gust, profile)
             ps = _precip_score(precip)
-            # Soft tide modifier: 0.4x mid-cycle, 1.0x at slack. Wind/precip
-            # remain hard multipliers so a blown-out hour still scores zero.
-            score = ws * ps * (0.4 + 0.6 * ts)
-            category = _classify(in_slack, wind, gust)
+            # Soft tide modifier: `tide_floor` at mid-cycle, 1.0 at slack.
+            # Floor is 0.4 for Chinook (slack-heavy) and 0.6 for Coho (they
+            # feed actively in moving water). Wind/precip stay hard.
+            floor = profile["tide_floor"]
+            score = ws * ps * (floor + (1.0 - floor) * ts)
+            category = _classify(in_slack, wind, gust, profile)
 
             cell = {
                 "time": key, "hour": hr, "score": score,
@@ -535,6 +558,7 @@ def _assemble(start: dt.date) -> dict:
         "water": w,
         "start": start,
         "end": start + dt.timedelta(days=DAYS - 1),
+        "target": profile,
         "distance_home_mi": round(haversine_km(*PLACES["home"], w.lat, w.lon) * 0.621371, 1),
         "distance_cabin_mi": round(haversine_km(*PLACES["cabin"], w.lat, w.lon) * 0.621371, 1),
         "grid": grid,
@@ -578,6 +602,13 @@ def _summarize_run(run: list[dict]) -> dict:
 # --- HTML rendering ----------------------------------------------------------
 
 EXTRA_CSS = """
+.target-pill{display:inline-block;vertical-align:middle;margin-left:12px;
+             padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;
+             letter-spacing:.5px;background:#DEECF9;color:var(--ms-blue-darker);
+             border:1px solid var(--ms-blue-darker)}
+.target-pill.coho{background:#F0E7F7;color:#5C2D91;border-color:#5C2D91}
+.target-pill.chinook{background:#DFF6DD;color:#0B6A0B;border-color:#0B6A0B}
+
 .heatmap{width:100%;border-collapse:separate;border-spacing:2px;font-size:11px;
          font-variant-numeric:tabular-nums;table-layout:fixed}
 .heatmap th{background:#F3F2F1;color:var(--ms-text-secondary);font-weight:600;
@@ -667,31 +698,13 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         day = row["date"]
         dlabel = day.strftime("%a %b %#d")
         cells = [f"<td class='label'>{dlabel}</td>"]
-        sun = row.get("sun") or {}
-        cd_h = sun.get("civil_dawn_h")
-        cu_h = sun.get("civil_dusk_h")
-        sr_h = sun.get("sunrise_h")
-        ss_h = sun.get("sunset_h")
         for c in row["cells"]:
             bg, fg = _score_cell_class(c["score"])
-            cls_parts = []
-            if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()):
-                cls_parts.append("tide-marker")
-            # Cell center is `hour + 0.5`. Anything fully outside civil dawn
-            # -> dusk is "night" (dark grey); anything between civil dawn and
-            # sunrise (or sunset and civil dusk) is "twilight" (light grey).
-            hr_mid = c["hour"] + 0.5
-            style = f"background:{bg};color:{fg}"
-            if cd_h is not None and cu_h is not None and (hr_mid < cd_h or hr_mid > cu_h):
-                cls_parts.append("night")
-                style = "background:#605E5C;color:#F3F2F1"
-            elif sr_h is not None and ss_h is not None and (hr_mid < sr_h or hr_mid > ss_h):
-                cls_parts.append("twilight")
-                style = f"background:{bg};color:{fg};opacity:0.65"
+            cls = "tide-marker" if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()) else ""
             tip = _cell_tooltip(c)
             display = f"{c['score']:.2f}".lstrip("0") if c["score"] > 0 else ""
             cells.append(
-                f"<td class='{' '.join(cls_parts)}' style='{style}' "
+                f"<td class='{cls}' style='background:{bg};color:{fg}' "
                 f"title=\"{html.escape(tip)}\">{display}</td>"
             )
         rows.append("<tr>" + "".join(cells) + "</tr>")
@@ -707,9 +720,6 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
-        "<span style='margin-left:14px'>"
-        "<span class='sw' style='background:#605E5C'></span>night</span>"
-        "<span><span class='sw' style='background:#DFF6DD;opacity:0.65'></span>twilight</span>"
         "</div>"
     )
     return legend + "<table class='heatmap'><thead>" + header + "</thead><tbody>" + "".join(rows) + "</tbody></table>"
@@ -821,7 +831,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                         hours_raw: list[dict],
                         events_dt: list[tuple[dt.datetime, float, str]],
                         tide_events: list[dict],
-                        sun: Optional[dict] = None) -> str:
+                        tide_floor: float = 0.4) -> str:
     """SVG: tide curve (blue area) + wind/gust (orange) + temp (purple) for one day."""
     W, H = 940, 272
     PL, PR, PT, PB = 50, 50, 78, 38
@@ -856,36 +866,17 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
 
     # (Score is now shown directly via the tide curve color, no separate strip.)
 
-    # Non-daylight shading: three tiers based on real sun geometry for this
-    # day at this water's lat/lon:
-    #   0  -> civil_dawn : deep night   (dark grey)
-    #   civil_dawn -> sunrise           : first-light twilight (light grey)
-    #   sunrise    -> sunset            : full daylight (clear)
-    #   sunset     -> civil_dusk        : last-light twilight (light grey)
-    #   civil_dusk -> 24                : deep night (dark grey)
-    # Falls back to the fixed HOUR_START/HOUR_END window if sun data missing.
-    NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
-    TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
-
-    def _shade(x0: float, x1: float, fill: str, op: float) -> str:
-        if x1 <= x0:
-            return ""
-        return (f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
-                f"fill='{fill}' opacity='{op}'/>")
-
-    if sun and all(sun.get(k) is not None for k in
-                   ("civil_dawn_h", "sunrise_h", "sunset_h", "civil_dusk_h")):
-        cd = sun["civil_dawn_h"]
-        sr = sun["sunrise_h"]
-        ss = sun["sunset_h"]
-        cu = sun["civil_dusk_h"]
-        parts.append(_shade(x_of(0),  x_of(cd), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(cd), x_of(sr), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(ss), x_of(cu), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(cu), x_of(24), NIGHT_FILL, NIGHT_OP))
-    else:
-        parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
+    # Non-daylight shading (before HOUR_START, after HOUR_END+1) + 30-min gridlines.
+    # Drawn before the tide curve so everything else paints on top.
+    parts.append(
+        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
+        f"fill='#D2D0CE' opacity='0.55'/>"
+    )
+    parts.append(
+        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
+        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
+        f"fill='#D2D0CE' opacity='0.55'/>"
+    )
     # 30-min vertical gridlines (half-hours lighter, hours a touch darker).
     half = 0
     while half <= 48:
@@ -1024,7 +1015,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 windows_with_slack.append(span)
 
         for lo, hi in windows_with_slack:
-            best = _window_heart(lo, hi, day_date, cells, tide_events)
+            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor)
             if best is None:
                 continue
             peak_t, score_val, peak_cell = best
@@ -1241,34 +1232,6 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
             f"font-weight='{weight}' fill='var(--ms-text-secondary)'>{_fmt_hour_label(hr)}</text>"
         )
 
-    # Sun-event edge labels below the hour axis. Outer/inner anchoring so the
-    # first-light + sunrise pair spread apart (and sunset + last-light) instead
-    # of colliding in early-summer months when they sit only ~40 min apart.
-    if sun:
-        sun_label_y = PT + IH + 25
-        sun_tick_top = PT + IH + 1
-        sun_tick_bot = PT + IH + 5
-        for key, label, anchor, dx in (
-            ("civil_dawn_h", "first",   "end",   -3),
-            ("sunrise_h",    "sunrise", "start",  3),
-            ("sunset_h",     "sunset",  "end",   -3),
-            ("civil_dusk_h", "last",    "start",  3),
-        ):
-            h = sun.get(key)
-            t = sun.get(key.replace("_h", ""))
-            if h is None or t is None:
-                continue
-            cx = x_of(h)
-            parts.append(
-                f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{sun_tick_top}' "
-                f"y2='{sun_tick_bot}' stroke='#605E5C' stroke-width='1.2'/>"
-            )
-            parts.append(
-                f"<text x='{cx + dx:.1f}' y='{sun_label_y}' text-anchor='{anchor}' "
-                f"font-size='9' font-style='italic' fill='#605E5C'>"
-                f"{label} {_sun_clock(t)}</text>"
-            )
-
     # Frame
     parts.append(
         f"<rect x='{PL}' y='{PT}' width='{IW}' height='{IH}' "
@@ -1319,10 +1282,9 @@ def _render_daily_charts(data: dict) -> str:
     )
 
     charts = []
+    tide_floor = (data.get("target") or TARGET_CHINOOK)["tide_floor"]
     for row in data["grid"]:
-        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"],
-                                  events_dt, data["tide_events"],
-                                  sun=row.get("sun"))
+        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor)
         badge_label, badge_cls = _day_wind_badge(row)
         badge_html = (
             f"<span class='day-badge {badge_cls}'>{badge_label}</span>"
@@ -1408,6 +1370,12 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
     )
 
     generated = dt.datetime.now().strftime("%Y-%m-%d %#I:%M %p")
+    profile = data.get("target") or TARGET_CHINOOK
+    target_pill = (
+        f"<span class='target-pill {profile['key']}' "
+        f"title='Scoring tuned for {profile['label'].title()} season'>"
+        f"TARGET: {profile['label']}</span>"
+    )
 
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
@@ -1417,7 +1385,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<header class='page'>"
         "<h1><div class='brand-logo'>"
         "<span></span><span></span><span></span><span></span>"
-        "</div>Marine Area 9 \u2014 Fishability Report</h1>"
+        f"</div>Marine Area 9 \u2014 Fishability Report{target_pill}</h1>"
         f"<div class='meta'>{data['start'].strftime('%A, %B %d')} \u2013 "
         f"{data['end'].strftime('%A, %B %d, %Y')} \u00b7 generated {generated}</div>"
         "</header>"
@@ -1429,16 +1397,17 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         f"{_render_top_kpis(data)}"
         f"<div class='grid'>{''.join(cards)}</div>"
         "</section>"
-        "<footer>Scoring: <b>wind_score &times; precip_score &times; (0.4 + 0.6 &times; tide_score)</b>. "
+        f"<footer>Scoring (<b>{profile['label'].title()}</b> profile): "
+        f"<b>wind_score &times; precip_score &times; ({profile['formula_str']})</b>. "
         "Wind and precip are hard multipliers; tide is a soft modifier so a "
-        "glass-calm mid-cycle hour earns ~0.4 (Marginal) on big-swing days "
+        f"glass-calm mid-cycle hour earns ~{profile['tide_floor']:.1f} (Marginal/Good) on big-swing days "
         "instead of being crushed to zero or inflated to Good. tide_score is "
         "1.0 at slack and decays linearly to 0; the half-window is sized per "
         "side by the adjacent swing \u2014 a 13 ft drop into slack gives a tight "
         "\u00b145 min before-window, a 4 ft rise out gives a generous \u00b13 hr "
         "after-window. Thresholds: &lt;3 ft = 6 hr, 3\u20136 = 3 hr, 6\u20139 = 90 min, "
         "\u22659 ft = 45 min. wind_score takes the worse of two tiers \u2014 "
-        "sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust &lt;15/&lt;20/&lt;25/\u226530 mph "
+        f"sustained {profile['sustained_str']} and gust {profile['gust_str']} "
         "\u2014 mapped to 1.0/0.7/0.3/0.0 so a calm-but-gusty hour can't earn "
         "Prime. Slack-tide chart badge label always matches the heatmap tier "
         "(PRIME if cell \u22650.9, else GOOD) so the chart and the cell can't "
@@ -1449,8 +1418,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "
-        "Chart shading: night (dark grey) \u2192 civil twilight (light grey) \u2192 daylight (clear); "
-        "labeled at first light, sunrise, sunset, last light per day. "
+        "Daylight only (5 AM \u2013 9 PM PT). "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"

@@ -20,11 +20,10 @@ from . import ROOT
 from .html_loadout import LOADOUT_CSS, render_nav
 from .html_report import CSS, _h, _kind_tag
 from .html_report_ma9 import (
-    CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START,
+    CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START, TARGET_CHINOOK,
     _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
     _window_heart,
 )
-from .sun import fmt_clock as _sun_clock
 
 
 # --- mobile-tuned per-day chart ---------------------------------------------
@@ -33,7 +32,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                                hours_raw: list[dict],
                                events_dt: list[tuple[dt.datetime, float, str]],
                                tide_events: list[dict],
-                               sun: Optional[dict] = None) -> str:
+                               tide_floor: float = 0.4) -> str:
     """Portrait-friendly SVG: same data layers as desktop, larger type."""
     W, H = 600, 320
     PL, PR, PT, PB = 40, 40, 78, 40
@@ -68,31 +67,17 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
 
     # (Score is shown directly via the tide curve color, no separate strip.)
 
-    # Sun-aware shading: night (dark) -> civil twilight (light) -> daylight
-    # (clear) -> civil twilight -> night. Falls back to the fixed
-    # HOUR_START/HOUR_END window if sun data is missing.
-    NIGHT_FILL, NIGHT_OP = "#8A8886", 0.35
-    TWI_FILL,   TWI_OP   = "#C8C6C4", 0.35
-
-    def _shade(x0: float, x1: float, fill: str, op: float) -> str:
-        if x1 <= x0:
-            return ""
-        return (f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
-                f"fill='{fill}' opacity='{op}'/>")
-
-    if sun and all(sun.get(k) is not None for k in
-                   ("civil_dawn_h", "sunrise_h", "sunset_h", "civil_dusk_h")):
-        cd = sun["civil_dawn_h"]
-        sr = sun["sunrise_h"]
-        ss = sun["sunset_h"]
-        cu = sun["civil_dusk_h"]
-        parts.append(_shade(x_of(0),  x_of(cd), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(cd), x_of(sr), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(ss), x_of(cu), TWI_FILL,   TWI_OP))
-        parts.append(_shade(x_of(cu), x_of(24), NIGHT_FILL, NIGHT_OP))
-    else:
-        parts.append(_shade(x_of(0), x_of(HOUR_START), NIGHT_FILL, NIGHT_OP))
-        parts.append(_shade(x_of(HOUR_END + 1), x_of(24), NIGHT_FILL, NIGHT_OP))
+    # Non-daylight shading + hourly vertical gridlines (no half-hours on mobile;
+    # too noisy at this width).
+    parts.append(
+        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
+        f"fill='#D2D0CE' opacity='0.55'/>"
+    )
+    parts.append(
+        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
+        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
+        f"fill='#D2D0CE' opacity='0.55'/>"
+    )
     for hr in range(0, 25):
         cx = x_of(hr)
         parts.append(
@@ -215,7 +200,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 windows_with_slack.append(span)
 
         for lo, hi in windows_with_slack:
-            best = _window_heart(lo, hi, day_date, cells, tide_events)
+            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor)
             if best is None:
                 continue
             t, score_val, peak_cell = best
@@ -408,33 +393,6 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             parts.append(
                 f"<text x='{cx:.1f}' y='{PT + IH + 18}' text-anchor='middle' font-size='11' "
                 f"font-weight='600' fill='var(--ms-text-secondary)'>{label}</text>"
-            )
-
-    # Sun-event edge labels below the hour axis (outer/inner anchoring so the
-    # tight first-light + sunrise pair spreads apart on this narrow mobile SVG).
-    if sun:
-        sun_label_y = PT + IH + 32
-        sun_tick_top = PT + IH + 1
-        sun_tick_bot = PT + IH + 5
-        for key, label, anchor, dx in (
-            ("civil_dawn_h", "first",   "end",   -3),
-            ("sunrise_h",    "sunrise", "start",  3),
-            ("sunset_h",     "sunset",  "end",   -3),
-            ("civil_dusk_h", "last",    "start",  3),
-        ):
-            h = sun.get(key)
-            t = sun.get(key.replace("_h", ""))
-            if h is None or t is None:
-                continue
-            cx = x_of(h)
-            parts.append(
-                f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{sun_tick_top}' "
-                f"y2='{sun_tick_bot}' stroke='#605E5C' stroke-width='1.5'/>"
-            )
-            parts.append(
-                f"<text x='{cx + dx:.1f}' y='{sun_label_y}' text-anchor='{anchor}' "
-                f"font-size='10' font-style='italic' fill='#605E5C'>"
-                f"{label} {_sun_clock(t)}</text>"
             )
 
     # Frame
@@ -645,6 +603,8 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
     if data is None:
         data = _assemble(start)
     w = data["water"]
+    profile = data.get("target") or TARGET_CHINOOK
+    tide_floor = profile["tide_floor"]
     generated = dt.datetime.now().strftime("%b %d, %#I:%M %p")
 
     # Pre-parse tide events into datetimes for the SVG renderer.
@@ -672,9 +632,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
             if wind_label else ""
         )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
-        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"],
-                                         events_dt, data["tide_events"],
-                                         sun=row.get("sun"))
+        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor)
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"
@@ -698,7 +656,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         f"<title>MA9 \u00b7 {data['start'].strftime('%b %#d')}</title>"
         f"<style>{CSS}{EXTRA_CSS}{MOBILE_CSS}{LOADOUT_CSS}</style></head><body>"
         "<header class='m-header'>"
-        "<h1>MA9 Fishing</h1>"
+        f"<h1>MA9 Fishing <span class='target-pill {profile['key']}'>{profile['label']}</span></h1>"
         f"<div class='meta'>{data['start'].strftime('%a %b %#d')} \u2013 "
         f"{data['end'].strftime('%a %b %#d')} \u00b7 updated {generated}</div>"
         "</header>"
@@ -711,13 +669,15 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         + "".join(day_cards)
         + "</section>"
         "<footer>"
-        f"<div>{_h(w.name)} \u00b7 tide station Hansville (9445526)</div>"
-        "<div>Score = wind \u00d7 precip \u00d7 (0.4 + 0.6 \u00d7 tide). Wind/precip are hard "
-        "multipliers; tide is a soft modifier so flat-calm mid-cycle hours "
-        "land at ~0.4 (Marginal). Tide half-window scales with the adjacent "
-        "swing per side (\u22659 ft = 45 min, &lt;3 ft = 6 hr). Wind score = "
-        "worse of two tiers \u2014 sustained &lt;10/&lt;15/&lt;25/\u226525 mph and gust "
-        "&lt;15/&lt;20/&lt;25/\u226530 mph \u2014 mapped to 1.0/0.7/0.3/0.0. "
+        f"<div>{_h(w.name)} \u00b7 tide station Hansville (9445526) \u00b7 "
+        f"<b>{profile['label'].title()}</b> profile</div>"
+        f"<div>Score = wind \u00d7 precip \u00d7 ({profile['formula_str']}). "
+        "Wind/precip are hard multipliers; tide is a soft modifier so flat-calm "
+        f"mid-cycle hours land at ~{profile['tide_floor']:.1f}. Tide half-window "
+        "scales with the adjacent swing per side (\u22659 ft = 45 min, &lt;3 ft "
+        "= 6 hr). Wind score = worse of two tiers \u2014 "
+        f"sustained {profile['sustained_str']} and gust {profile['gust_str']} "
+        "\u2014 mapped to 1.0/0.7/0.3/0.0. "
         "Day badge: <b>GLASS</b> (max wind \u22647, "
         "gust \u226410), <b>WINDY</b> (wind &gt;15 or gust \u226525), <b>BREEZY</b> in "
         "between.</div>"
