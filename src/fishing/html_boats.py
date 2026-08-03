@@ -5,6 +5,9 @@ in the ``BOATS`` list below, so refreshing the chart is just editing that list
 and rerunning the build. No live data, so it rebuilds cheaply alongside the
 forecast and gear tabs.
 
+The list is a running comparison of candidate MODELS and their tradeoffs, not
+specific for-sale units.
+
 Run:
     python -m fishing.html_boats boats docs/boats.html
 """
@@ -29,60 +32,99 @@ from .html_loadout import render_nav
 
 BOATS = [
     {
-        "brand": "Alumaweld", "model": "Intruder 22 (Hardtop)",
-        "loa": "24'9\"", "beam": "8'3.5\"", "deadrise": "18\u00b0",
-        "bottom": ".190\"", "sides": ".125\"",
-        "dry": 2475, "fuel": 60, "hp": 225,
-        "bracket": "Yes (Alumadrive)", "warranty": "Limited",
-        "price": "New ~$90k+ \u00b7 best used value",
-        "price_sort": 90000,
-        "provenance": "verified",
-        "source": "2026 catalog PDF",
-        "tag": "b",
-        "fit": "Lightest hull \u2192 best sand-flat draft and beaching. "
-               "Tradeoffs: thinnest sides (.125\"), narrower 8'3.5\" beam, and a "
-               "225 HP cap. Offered as DuraFrame Sport Top or hardtop \u2014 "
-               "matches your open-hardtop want.",
-    },
-    {
-        "brand": "North River", "model": "Coho 21' Hard Top",
-        "loa": "23'2\"", "beam": "8'6\"", "deadrise": "18\u00b0",
-        "bottom": ".190\"", "sides": ".160\"",
-        "dry": 2800, "fuel": 70, "hp": 300,
-        "bracket": "Yes (standard)", "warranty": "7-yr hull",
-        "price": "$79,995 new (turnkey)",
-        "price_sort": 79995,
-        "provenance": "verified",
-        "source": "dealer PDF",
-        "tag": "g",
-        "fit": "The only true ~21' factory hardtop, and an attainable NEW "
-               "number. Note it's North River's VALUE tier: .190\" bottom + "
-               "7-yr warranty (vs the Seahawk's .250\" + lifetime). Comes "
-               "standard with 150 HP + trailer + hydraulic steering + offshore "
-               "bracket. Cockpit is smaller (66\") than the bigger hulls.",
-    },
-    {
         "brand": "North River", "model": "Seahawk Outboard 21'",
         "loa": "23'2\"", "beam": "8'6\"", "deadrise": "18\u00b0 (42\u00b0 entry)",
-        "bottom": ".250\"", "sides": ".160\"",
+        "bottom": ".250\"", "sides": ".160\"", "transom_thk": ".250\"",
         "dry": 2680, "fuel": 70, "hp": 300,
         "bracket": "Yes (offshore, std)", "warranty": "Lifetime hull",
-        "price": "Used ~$60\u201398k",
+        "price": "Used ~$55\u201395k \u00b7 new ~$110k+",
         "price_sort": 72000,
         "provenance": "verified",
         "source": "2025 Seahawk spec sheet",
         "tag": "p",
-        "fit": "Best-built hull here: .250\" bottom + towering 35\" sides + "
-               "North River's LIFETIME hull warranty (vs the Coho's .190\" / "
-               "7-yr \u2014 same brand, value tier). 42\u00b0 entry / 18\u00b0 transom = "
-               "soft, dry ride; verified offshore bracket. Ships with a deluxe "
-               "FOLDING (soft) top standard \u2014 add the rigid removable top for a "
-               "hardtop that pops off for sled-like deck space. The only catch: "
-               "a true enclosed hardtop in this line means stepping up to the "
-               "23' Hard Top (25'2\" LOA, 3,060 lb). Premium price \u2014 buy "
-               "older/plainer to stay in budget.",
+        "fit": "The strongest hull in the running and my benchmark for MA9 "
+               "rough water. .250\" bottom + .250\" transom + towering 35\" "
+               "sides + North River's LIFETIME (transferable) hull warranty "
+               "\u2014 vs the Coho's .190\" / 7-yr, same brand's value tier. "
+               "42\u00b0 entry / 18\u00b0 transom = the softest, driest ride here, and "
+               "it stays stuck-down in a chop. TRADEOFFS: heavy (2,680 lb) so "
+               "it's a harder solo-launch/tow than the Duckworth Sport, and it "
+               "ships with a deluxe FOLDING soft top standard \u2014 add the rigid "
+               "removable top for a pop-off hardtop; a true enclosed factory "
+               "hardtop means stepping up to the 23' Hard Top (25'2\" LOA, "
+               "~3,060 lb). Premium price \u2014 buy older/plainer to stay in "
+               "budget. Best fit if ride quality and build are the priority.",
         "pick": True,
         "picklabel": "Top build",
+    },
+    {
+        "brand": "Alumaweld", "model": "Intruder 22 (Hardtop)",
+        "loa": "24'9\"", "beam": "8'3.5\"", "deadrise": "18\u00b0",
+        "bottom": ".190\"", "sides": ".125\"", "transom_thk": ".250\"",
+        "dry": 2475, "fuel": 60, "hp": 225,
+        "bracket": "Yes (Alumadrive)", "warranty": "Limited",
+        "price": "Used ~$45\u201370k \u00b7 new ~$90k+",
+        "price_sort": 60000,
+        "provenance": "verified",
+        "source": "2026 catalog PDF",
+        "tag": "b",
+        "fit": "Alumaweld's value OFFSHORE boat \u2014 not the entry line. Full "
+               "18\u00b0 vee, .190\" bottom + heavy .250\" transom, Alumadrive "
+               "bracket standard \u2014 one of the deepest-vee hulls in the "
+               "shortlist at the 20-22' size. Heavier (2,475 lb) than the "
+               "Duckworth Sport, so it rides softer and stays stuck-down in "
+               "MA9 chop past 10-12 kt. Offered as DuraFrame Sport Top or full "
+               "hardtop. TRADEOFFS vs the Seahawk: thinner .190\" bottom and "
+               "limited (not lifetime) warranty, but typically a lower buy-in "
+               "\u2014 the value-priced way into a real deep-vee. TRADEOFFS vs "
+               "lighter boats: more trailer weight, worse solo-launch, 225 HP "
+               "ceiling.",
+    },
+    {
+        "brand": "Duckworth", "model": "Pacific Navigator 22",
+        "loa": "25'0\" (incl. bracket)", "beam": "8'6\"",
+        "deadrise": "18\u00b0 transom (28\u00b0 fwd / 34\u00b0 bow)",
+        "bottom": ".190\" (5086-H116)", "sides": ".125\" (5052-H32)",
+        "transom_thk": "\u2014",
+        "dry": 2783, "fuel": 65, "hp": 300,
+        "bracket": "Yes (offshore, std)", "warranty": "\u2014",
+        "price": "Used ~$55\u201380k \u00b7 new ~$120k+",
+        "price_sort": 68000,
+        "provenance": "verified",
+        "source": "Duckworth.net spec page (Pacific Navigator 22)",
+        "tag": "o",
+        "fit": "The premium-Duckworth offshore model \u2014 a completely different "
+               "boat from the value Sport 20. Published specs: 18\u00b0 transom "
+               "(28\u00b0 forward / 34\u00b0 bow entry), .190\" bottom (5086-H116) + "
+               ".125\" sides, 39\" side height, 7' bottom width, 8'6\" beam, "
+               "2,783 lb dry, 65-gal diurnal fuel system, 300 HP rating. "
+               "MEETS the refined non-negotiables: \u226518\u00b0 deadrise, \u2265.190\" "
+               "bottom, \u22652,300 lb dry, \u226550 gal fuel. TRADEOFFS: one of the "
+               "biggest hulls here (25'0\" incl. bracket), so the most boat to "
+               "tow/launch/store. STILL VERIFY (not on the spec page): transom "
+               "gauge, cockpit length (\u226572\" target), cabin height (\u22656'2\" "
+               "target), and whether the unit has a soft/hybrid or full "
+               "hardtop.",
+    },
+    {
+        "brand": "North River", "model": "Coho 21' Hard Top",
+        "loa": "23'2\"", "beam": "8'6\"", "deadrise": "18\u00b0",
+        "bottom": ".190\"", "sides": ".160\"", "transom_thk": ".190\"",
+        "dry": 2800, "fuel": 70, "hp": 300,
+        "bracket": "Yes (standard)", "warranty": "7-yr hull",
+        "price": "$79,995 new (turnkey) \u00b7 used ~$55\u201375k",
+        "price_sort": 79995,
+        "provenance": "verified",
+        "source": "dealer PDF",
+        "tag": "g",
+        "fit": "The only true ~21' FACTORY hardtop at an attainable NEW "
+               "number, and turnkey (150 HP + trailer + hydraulic steering + "
+               "offshore bracket standard). TRADEOFFS: it's North River's "
+               "VALUE tier \u2014 .190\" bottom + 7-yr warranty vs the Seahawk's "
+               ".250\" + lifetime (same brand, lighter build). Cockpit is "
+               "smaller (66\") than the bigger hulls. Best fit if you want a "
+               "brand-new enclosed hardtop without stepping up to the 23' "
+               "Seahawk Hard Top's price.",
     },
     {
         "brand": "KingFisher", "model": "2325 Coastal Express",
@@ -90,38 +132,73 @@ BOATS = [
         "bottom": ".190\"", "sides": ".125\"",
         "dry": 2660, "fuel": 85, "hp": 250,
         "bracket": "No (transom)", "warranty": "Lifetime hull",
-        "price": "~$120k+ new",
-        "price_sort": 120000,
+        "price": "Used ~$65\u201390k \u00b7 new ~$120k+",
+        "price_sort": 78000,
         "provenance": "verified",
         "source": "2026 KingFisher boat guide PDF",
         "tag": "t",
-        "fit": "Value-quality middle ground, now verified. Flatter 16\u00b0 "
-               "variable-deadrise hull = slightly firmer offshore ride but very "
-               "stable. Note it's TRANSOM-mounted (no bracket) \u2014 25\" transom, "
-               "step-thru \u2014 unlike the bracketed Duckworth/Alumaweld. Biggest "
-               "tank here (85 gal) and a deep 6'2\" cockpit; pilot-house cabin "
-               "(7'2\", 6'1\" headroom). Capped at 250 HP.",
+        "fit": "Value-quality middle ground. Flatter 16\u00b0 variable-deadrise "
+               "hull = slightly firmer offshore ride but very stable, and "
+               "lifetime hull warranty. Biggest tank here (85 gal \u2014 longest "
+               "trolling range) and a deep 6'2\" cockpit; pilot-house cabin "
+               "(7'2\", 6'1\" headroom). TRADEOFFS: it's TRANSOM-mounted (25\", "
+               "step-thru) rather than bracketed like the Duckworth/Alumaweld, "
+               "the flatter hull gives up some big-chop cushion vs the 18\u00b0 "
+               "vees, and it's capped at 250 HP.",
     },
     {
-        "brand": "Duckworth", "model": "Pacific Navigator 215",
-        "loa": "23'6\"", "beam": "8'6\"", "deadrise": "18\u00b0 (34\u00b0 bow)",
-        "bottom": ".190\"", "sides": ".125\"",
-        "dry": 2270, "fuel": 65, "hp": 300,
-        "bracket": "Yes (25\" offshore, std)", "warranty": "\u2014",
-        "price": "$55k (2015, live)",
-        "price_sort": 55000,
+        "brand": "Hewescraft", "model": "210 Searunner",
+        "loa": "22'6\" (incl. bracket)", "beam": "8'0\"",
+        "deadrise": "16\u00b0",
+        "bottom": ".160\"", "sides": ".100\"", "transom_thk": "\u2014",
+        "dry": 2250, "fuel": 55, "hp": 150,
+        "bracket": "Yes (offshore, std)", "warranty": "Limited",
+        "price": "Used ~$40\u201355k \u00b7 new ~$90k+",
+        "price_sort": 47000,
         "provenance": "verified",
-        "source": "2015 Duckworth model guide PDF",
+        "source": "Hewescraft model guide",
+        "tag": "b",
+        "fit": "The value-tier PNW workhorse. Hewescraft is the best-selling "
+               "aluminum boat in WA \u2014 legendary resale, easy to fix, "
+               "everyone knows what it is. The Searunner is the SEMI-cabin "
+               "line (small cuddy + open helm) between the open Sportsman and "
+               "the full-pilothouse Ocean Pro. IMPORTANT class distinction: "
+               "this is NOT the same class of offshore boat as the Seahawk / "
+               "Intruder / Duckworth 235 \u2014 lighter build (.160\" bottom, "
+               ".100\" sides, thinnest here), 150 HP ceiling caps a repower. "
+               "Rides firmer in real MA9 chop; competent for Saratoga / Skagit "
+               "Bay / Possession Bar fair-weather, marginal for Deception Pass "
+               "/ open Strait on a 3-4' day. No hardtop in this trim. Best fit "
+               "as the affordable, protected-water, easy-resale option.",
+    },
+    {
+        "brand": "Duckworth", "model": "Pacific Navigator Sport 20",
+        "loa": "21'11\" (incl. bracket)", "beam": "7'9.5\"",
+        "deadrise": "14\u00b0 transom (24\u00b0 fwd / 30\u00b0 bow)",
+        "bottom": ".190\"", "sides": ".125\"",
+        "dry": 1635, "fuel": 42, "hp": 200,
+        "bracket": "Yes (25\" offshore, std)", "warranty": "\u2014",
+        "price": "Used ~$40\u201355k",
+        "price_sort": 48000,
+        "provenance": "verified",
+        "source": "Duckworth model guide PDF",
         "tag": "o",
-        "fit": "Verified-spec correction: at 2,270 lb dry it's the LIGHTEST hull "
-               "here \u2014 not the deep-draft pig I'd assumed \u2014 with a full "
-               "reverse-chine bottom, wide 8'6\" beam, and an aggressive 34\u00b0 bow "
-               "entry for a soft open-water ride. Standard 25\" offshore bracket. "
-               "The live 2015 unit nails your dream rig: Yamaha 115 + T9.9 kicker, "
-               "~319 hrs, offshore-proven out of Westport. (Confirm the exact model "
-               "\u2014 its 42-gal tank vs the 215's 65-gal standard hints it may be a "
-               "Navigator 200/Sport.)",
+        "fit": "The LIGHT / BEACHABLE end of the shortlist \u2014 Duckworth's "
+               "value SPORT trim (not the upscale 215 SE). At ~1,635 lb dry "
+               "it's by far the lightest hull here: easiest to solo-launch, "
+               "beach at Useless Bay, and tow behind anything. Full "
+               "reverse-chine bottom + 30\u00b0 bow entry keep the ride soft; the "
+               "flatter 14\u00b0 transom trades some big-water cushion for "
+               "stability at rest \u2014 nice for mooching. Standard 25\" offshore "
+               "bracket. TRADEOFFS vs the bigger hulls: 7'9.5\" beam is the "
+               "NARROWEST here (vs 8'-8'6\"), the 42-gal tank caps range "
+               "(~7-8 hrs trolling), 200 HP ceiling, and it ships with a soft "
+               "convertible top \u2014 NOT a hardtop, so it doesn't satisfy that "
+               "want on its own (removable hardtop add ~$3-5k later). Best fit "
+               "if beach/solo-launch flexibility matters more than a big-chop "
+               "MA9 hull.",
         "pick": True,
+        "picklabel": "Lightest / beachable",
     },
     {
         "brand": "Silver Streak", "model": "21' Hardtop",
@@ -129,15 +206,16 @@ BOATS = [
         "bottom": "7' w/ reverse chines", "sides": "\u2014",
         "dry": "\u2014", "fuel": "\u2014", "hp": "\u2014",
         "bracket": "Yes (offshore)", "warranty": "\u2014",
-        "price": "$89k firm (2015, live)",
-        "price_sort": 89000,
-        "url": "https://www.craigslist.org/view/d/anacortes-21-silver-streak-hardtop/nVYzTMLAxDhvdAqTYGQsjo",
-        "provenance": "listing",
-        "source": "live listing + general",
+        "price": "Used ~$70\u201395k (BC premium)",
+        "price_sort": 85000,
+        "provenance": "approx",
+        "source": "builder site + general",
         "tag": "b",
-        "fit": "Premium BC tank. True reverse chines = very stable + dry ride, "
-               "7 gph @ 30 mph. Over budget, but a useful quality/ride "
-               "benchmark to measure the others against.",
+        "fit": "Premium BC tank and the quality/ride benchmark I measure the "
+               "others against. True reverse chines = very stable + dry ride, "
+               "~7 gph @ 30 mph. Factory hardtop. TRADEOFF: typically over "
+               "budget and the priciest to buy in, so it's more a reference "
+               "point than a likely purchase.",
     },
 ]
 
@@ -149,6 +227,7 @@ COLUMNS = [
     ("deadrise", "Deadrise", False),
     ("bottom", "Bottom", False),
     ("sides", "Sides", False),
+    ("transom_thk", "Transom", False),
     ("dry", "Dry (lb)", True),
     ("fuel", "Fuel (gal)", True),
     ("hp", "Max HP", True),
@@ -340,33 +419,36 @@ def _detail_card(b: dict) -> str:
 _SORT_JS = """
 <script>
 (function(){
-  var table=document.getElementById('cmp');
-  if(!table) return;
-  var tbody=table.tBodies[0];
-  var ths=table.tHead.rows[0].cells;
-  var state={col:-1,dir:1};
-  function val(row,col,numeric){
-    var td=row.cells[col];
-    var s=td.getAttribute('data-sort');
-    if(numeric) return parseFloat(s)||0;
-    return (s||td.textContent).toLowerCase();
+  function attach(tableId){
+    var table=document.getElementById(tableId);
+    if(!table||!table.tHead) return;
+    var tbody=table.tBodies[0];
+    var ths=table.tHead.rows[0].cells;
+    var state={col:-1,dir:1};
+    function val(row,col,numeric){
+      var td=row.cells[col];
+      var s=td.getAttribute('data-sort');
+      if(numeric) return parseFloat(s)||0;
+      return (s||td.textContent).toLowerCase();
+    }
+    function sortBy(col){
+      var numeric=ths[col].getAttribute('data-numeric')==='1';
+      if(state.col===col){state.dir*=-1;}else{state.col=col;state.dir=1;}
+      var rows=Array.prototype.slice.call(tbody.rows);
+      rows.sort(function(a,b){
+        var x=val(a,col,numeric), y=val(b,col,numeric);
+        if(x<y) return -1*state.dir;
+        if(x>y) return 1*state.dir;
+        return 0;
+      });
+      rows.forEach(function(r){tbody.appendChild(r);});
+      for(var i=0;i<ths.length;i++){ths[i].classList.toggle('sorted',i===col);}
+    }
+    for(var i=0;i<ths.length;i++){
+      (function(idx){ths[idx].addEventListener('click',function(){sortBy(idx);});})(i);
+    }
   }
-  function sortBy(col){
-    var numeric=ths[col].getAttribute('data-numeric')==='1';
-    if(state.col===col){state.dir*=-1;}else{state.col=col;state.dir=1;}
-    var rows=Array.prototype.slice.call(tbody.rows);
-    rows.sort(function(a,b){
-      var x=val(a,col,numeric), y=val(b,col,numeric);
-      if(x<y) return -1*state.dir;
-      if(x>y) return 1*state.dir;
-      return 0;
-    });
-    rows.forEach(function(r){tbody.appendChild(r);});
-    for(var i=0;i<ths.length;i++){ths[i].classList.toggle('sorted',i===col);}
-  }
-  for(var i=0;i<ths.length;i++){
-    (function(idx){ths[idx].addEventListener('click',function(){sortBy(idx);});})(i);
-  }
+  attach('cmp');
 })();
 </script>
 """
@@ -381,7 +463,7 @@ def build_boats_html() -> str:
     verified = sum(1 for b in BOATS if b.get("provenance") == "verified")
 
     pills = [
-        f"<span class='pill'>Boats&nbsp;<b>{n}</b></span>",
+        f"<span class='pill'>Models&nbsp;<b>{n}</b></span>",
         "<span class='pill'>Target&nbsp;<b>20\u201322' aluminum hardtop</b></span>",
         "<span class='pill'>Budget&nbsp;<b>$40\u201355k</b></span>",
         f"<span class='pill'>Verified specs&nbsp;<b>{verified}/{n}</b></span>",
@@ -401,9 +483,11 @@ def build_boats_html() -> str:
         f"{render_nav('boats')}"
         "<section class='hero'>"
         "<h1>Boat Shortlist \u2693</h1>"
-        "<div class='sub'>The 20\u201322' welded-aluminum hardtop-cabin boats in the running \u2014 "
-        "click any column header to sort. Deciding specs for your use: shallow draft (dry "
-        "weight), ride quality (deadrise + weight), and beam/stability.</div>"
+        "<div class='sub'>A running comparison of the 20\u201322' welded-aluminum "
+        "hardtop-cabin MODELS in the running \u2014 not specific for-sale units. "
+        "Click any column header to sort. Deciding specs for your use: shallow "
+        "draft (dry weight), ride quality (deadrise + weight), and "
+        "beam/stability.</div>"
         f"<div class='pill-row'>{''.join(pills)}</div>"
         "</section>"
         "<section class='section-pad'>"
@@ -414,8 +498,7 @@ def build_boats_html() -> str:
         "</div>"
         "<div class='legend'>"
         "<span><span class='prov verified'>verified</span> spec sheet / catalog / builder site</span>"
-        "<span><span class='prov listing'>listing</span> from a live for-sale ad</span>"
-        "<span><span class='prov approx'>approx</span> model-family figure (site JS-blocked); \u201c~\u201d = approximate</span>"
+        "<span><span class='prov approx'>approx</span> model-family figure; \u201c~\u201d = approximate</span>"
         "</div>"
         f"<div class='detail-grid'>{cards}</div>"
         "</section>"
