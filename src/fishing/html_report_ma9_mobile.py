@@ -32,7 +32,8 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                                hours_raw: list[dict],
                                events_dt: list[tuple[dt.datetime, float, str]],
                                tide_events: list[dict],
-                               tide_floor: float = 0.4) -> str:
+                               tide_floor: float = 0.4,
+                               sun: Optional[dict] = None) -> str:
     """Portrait-friendly SVG: same data layers as desktop, larger type."""
     W, H = 600, 320
     PL, PR, PT, PB = 40, 40, 78, 40
@@ -68,16 +69,39 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
     # (Score is shown directly via the tide curve color, no separate strip.)
 
     # Non-daylight shading + hourly vertical gridlines (no half-hours on mobile;
-    # too noisy at this width).
-    parts.append(
-        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
-    parts.append(
-        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
-        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
+    # too noisy at this width). Sun-aware slabs when the per-day sun dict is
+    # supplied so night/twilight match the sky rather than a fixed clock band.
+    def _h_of(t: Optional[dt.datetime]) -> Optional[float]:
+        if t is None or t.date() != day_date:
+            return None
+        return t.hour + t.minute / 60.0 + t.second / 3600.0
+
+    cd_h = _h_of(sun.get("civil_dawn")) if sun else None
+    sr_h = _h_of(sun.get("sunrise"))    if sun else None
+    ss_h = _h_of(sun.get("sunset"))     if sun else None
+    cs_h = _h_of(sun.get("civil_dusk")) if sun else None
+
+    NIGHT = "#605E5C"
+    TWILIGHT = "#D2D0CE"
+
+    def _slab(x0: float, x1: float, fill: str, opacity: float) -> None:
+        if x1 - x0 < 0.5:
+            return
+        parts.append(
+            f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
+            f"fill='{fill}' opacity='{opacity}'/>"
+        )
+
+    if cd_h is not None and cs_h is not None:
+        _slab(PL, x_of(cd_h), NIGHT, 0.28)
+        if sr_h is not None and sr_h > cd_h:
+            _slab(x_of(cd_h), x_of(sr_h), TWILIGHT, 0.55)
+        if ss_h is not None and cs_h > ss_h:
+            _slab(x_of(ss_h), x_of(cs_h), TWILIGHT, 0.55)
+        _slab(x_of(cs_h), PL + IW, NIGHT, 0.28)
+    else:
+        _slab(PL, x_of(HOUR_START), TWILIGHT, 0.55)
+        _slab(x_of(HOUR_END + 1), PL + IW, TWILIGHT, 0.55)
     for hr in range(0, 25):
         cx = x_of(hr)
         parts.append(
@@ -200,7 +224,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                 windows_with_slack.append(span)
 
         for lo, hi in windows_with_slack:
-            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor)
+            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor, sun)
             if best is None:
                 continue
             t, score_val, peak_cell = best
@@ -632,7 +656,7 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
             if wind_label else ""
         )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
-        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor)
+        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor, row.get("sun"))
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"

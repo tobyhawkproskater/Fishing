@@ -59,6 +59,7 @@ from .html_report import (
     CSS, _deg_to_compass, _fmt, _h, _kind_tag, _render_buoy,
     _render_rules, _render_tides, _group_tides_by_day, _wind_cell_class,
 )
+from .sun import sun_times
 
 DAYS = 7
 HOUR_START = 5   # 5 AM PT
@@ -246,10 +247,34 @@ def _precip_score(precip_in: Optional[float]) -> float:
     return 1.0 if p < 0.05 else 0.5
 
 
+def _daylight_score(when: dt.datetime, sun: dict) -> float:
+    """1.0 between sunrise and sunset, linear taper through civil twilight, 0.0 at night.
+
+    Prevents Best-Today / best-moment markers from landing after dark just
+    because wind and tide happen to line up. Missing sun events fall back to
+    1.0 (no penalty) so latitude edge cases can't zero the whole day.
+    """
+    cd = sun.get("civil_dawn"); sr = sun.get("sunrise")
+    ss = sun.get("sunset");     cs = sun.get("civil_dusk")
+    if not (cd and sr and ss and cs):
+        return 1.0
+    if when <= cd or when >= cs:
+        return 0.0
+    if when < sr:
+        span = (sr - cd).total_seconds()
+        return (when - cd).total_seconds() / span if span > 0 else 1.0
+    if when <= ss:
+        return 1.0
+    span = (cs - ss).total_seconds()
+    return (cs - when).total_seconds() / span if span > 0 else 0.0
+
+
+
 def _window_heart(
     lo: float, hi: float, day_date: dt.date,
     cells: list[dict], tide_events: list[dict],
     tide_floor: float = 0.4,
+    sun: Optional[dict] = None,
 ) -> Optional[tuple[dt.datetime, float, dict]]:
     """Return the score-weighted center-of-mass minute of a Prime/Good window.
 
@@ -257,9 +282,11 @@ def _window_heart(
     drop), so the single peak minute sits near the trailing edge at slack.
     Scanning the window [lo, hi] (fractional hours) at 1-minute resolution and
     taking the centroid of the score curve pulls the marker into the heart of
-    the bite — earlier than slack, where the good fishing is actually
+    the bite -- earlier than slack, where the good fishing is actually
     sustained. Slack distance is measured continuously (not quantized to the
-    60-minute cell block) and wind/precip come from the hourly cell. Returns
+    60-minute cell block) and wind/precip come from the hourly cell. If a
+    `sun` dict is supplied, minute-level daylight (0..1) multiplies the
+    score too so the centroid can never drift into the dark. Returns
     (minute, score_at_minute, hour_cell) or None.
     """
     parsed: list[tuple[dt.datetime, dict]] = []
@@ -290,7 +317,8 @@ def _window_heart(
             before_win, after_win = _slack_half_windows(ev, tide_events)
             half_win = after_win if m >= ev_t else before_win
             ts = _tide_score(mins, half_win)
-            score = ws * ps * (tide_floor + (1.0 - tide_floor) * ts)
+            ds = _daylight_score(m, sun) if sun else 1.0
+            score = ws * ps * ds * (tide_floor + (1.0 - tide_floor) * ts)
             idx = hh * 60 + mm
             num += idx * score
             den += score
@@ -494,7 +522,8 @@ def _assemble(start: dt.date) -> dict:
 
     for di in range(DAYS):
         day = start + dt.timedelta(days=di)
-        row = {"date": day, "cells": []}
+        sun = sun_times(day, w.lat, w.lon)
+        row = {"date": day, "cells": [], "sun": sun}
         run: list[dict] = []
         for hr in range(HOUR_START, HOUR_END + 1):
             key = f"{day.isoformat()}T{hr:02d}:00"
@@ -520,16 +549,19 @@ def _assemble(start: dt.date) -> dict:
             ts = _tide_score(mins, half_win)
             ws = _wind_score(wind, gust, profile)
             ps = _precip_score(precip)
+            ds = _daylight_score(dt.datetime.fromisoformat(key), sun)
             # Soft tide modifier: `tide_floor` at mid-cycle, 1.0 at slack.
             # Floor is 0.4 for Chinook (slack-heavy) and 0.6 for Coho (they
             # feed actively in moving water). Wind/precip stay hard.
+            # Daylight is also hard: cells fully in the dark score 0.
             floor = profile["tide_floor"]
-            score = ws * ps * (floor + (1.0 - floor) * ts)
+            score = ws * ps * ds * (floor + (1.0 - floor) * ts)
             category = _classify(in_slack, wind, gust, profile)
 
             cell = {
                 "time": key, "hour": hr, "score": score,
                 "tide_score": ts, "wind_score": ws, "precip_score": ps,
+                "daylight_score": ds,
                 "slack_window_min": half_win,
                 "category": category,
                 "in_slack": in_slack, "minutes_to_slack": mins,
@@ -831,7 +863,8 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                         hours_raw: list[dict],
                         events_dt: list[tuple[dt.datetime, float, str]],
                         tide_events: list[dict],
-                        tide_floor: float = 0.4) -> str:
+                        tide_floor: float = 0.4,
+                        sun: Optional[dict] = None) -> str:
     """SVG: tide curve (blue area) + wind/gust (orange) + temp (purple) for one day."""
     W, H = 940, 272
     PL, PR, PT, PB = 50, 50, 78, 38
@@ -866,17 +899,46 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
 
     # (Score is now shown directly via the tide curve color, no separate strip.)
 
-    # Non-daylight shading (before HOUR_START, after HOUR_END+1) + 30-min gridlines.
-    # Drawn before the tide curve so everything else paints on top.
-    parts.append(
-        f"<rect x='{PL}' y='{PT}' width='{x_of(HOUR_START) - PL:.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
-    parts.append(
-        f"<rect x='{x_of(HOUR_END + 1):.1f}' y='{PT}' "
-        f"width='{(PL + IW) - x_of(HOUR_END + 1):.1f}' height='{IH}' "
-        f"fill='#D2D0CE' opacity='0.55'/>"
-    )
+    # Non-daylight shading + 30-min gridlines. Uses per-day sun events when
+    # available (dark slab beyond civil dusk/dawn, softer slab through the
+    # twilight bands) so the shading matches the sky, not a fixed 5 AM-9 PM
+    # window. Falls back to the static HOUR_START/HOUR_END slabs if sun is
+    # unknown. Drawn before the tide curve so everything else paints on top.
+    def _h_of(t: Optional[dt.datetime]) -> Optional[float]:
+        if t is None or t.date() != day_date:
+            return None
+        return t.hour + t.minute / 60.0 + t.second / 3600.0
+
+    cd_h = _h_of(sun.get("civil_dawn")) if sun else None
+    sr_h = _h_of(sun.get("sunrise"))    if sun else None
+    ss_h = _h_of(sun.get("sunset"))     if sun else None
+    cs_h = _h_of(sun.get("civil_dusk")) if sun else None
+
+    NIGHT = "#605E5C"
+    TWILIGHT = "#D2D0CE"
+
+    def _slab(x0: float, x1: float, fill: str, opacity: float) -> None:
+        if x1 - x0 < 0.5:
+            return
+        parts.append(
+            f"<rect x='{x0:.1f}' y='{PT}' width='{x1 - x0:.1f}' height='{IH}' "
+            f"fill='{fill}' opacity='{opacity}'/>"
+        )
+
+    if cd_h is not None and cs_h is not None:
+        # Night before civil dawn
+        _slab(PL, x_of(cd_h), NIGHT, 0.28)
+        # Morning twilight (civil_dawn -> sunrise)
+        if sr_h is not None and sr_h > cd_h:
+            _slab(x_of(cd_h), x_of(sr_h), TWILIGHT, 0.55)
+        # Evening twilight (sunset -> civil_dusk)
+        if ss_h is not None and cs_h > ss_h:
+            _slab(x_of(ss_h), x_of(cs_h), TWILIGHT, 0.55)
+        # Night after civil dusk
+        _slab(x_of(cs_h), PL + IW, NIGHT, 0.28)
+    else:
+        _slab(PL, x_of(HOUR_START), TWILIGHT, 0.55)
+        _slab(x_of(HOUR_END + 1), PL + IW, TWILIGHT, 0.55)
     # 30-min vertical gridlines (half-hours lighter, hours a touch darker).
     half = 0
     while half <= 48:
@@ -1015,7 +1077,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
                 windows_with_slack.append(span)
 
         for lo, hi in windows_with_slack:
-            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor)
+            best = _window_heart(lo, hi, day_date, cells, tide_events, tide_floor, sun)
             if best is None:
                 continue
             peak_t, score_val, peak_cell = best
@@ -1284,7 +1346,7 @@ def _render_daily_charts(data: dict) -> str:
     charts = []
     tide_floor = (data.get("target") or TARGET_CHINOOK)["tide_floor"]
     for row in data["grid"]:
-        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor)
+        svg = _render_daily_chart(row["date"], row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor, row.get("sun"))
         badge_label, badge_cls = _day_wind_badge(row)
         badge_html = (
             f"<span class='day-badge {badge_cls}'>{badge_label}</span>"
@@ -1418,7 +1480,8 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "or gust \u226525), <b>BREEZY</b> in between. "
         "Tide curve color matches the heatmap tier \u2014 "
         "<b>green</b>=Prime, <b>light green</b>=Good, <b>yellow</b>=Marginal, <b>orange</b>=Poor, <b>red</b>=Terrible. "
-        "Daylight only (5 AM \u2013 9 PM PT). "
+        "Daylight-gated: cell scores fall to 0 past civil dusk and linearly "
+        "taper through morning/evening twilight so windows can't land in the dark. "
         f"Wind blend: {' + '.join(data.get('wind_sources') or ['Open-Meteo'])}. "
         "Other sources: NOAA NWS \u00b7 NOAA CO-OPS \u00b7 NDBC.</footer>"
         "</body></html>"
