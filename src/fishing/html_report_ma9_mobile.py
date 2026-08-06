@@ -144,7 +144,11 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             "terrible": "#A4262C",
         }
 
-        def _tier(score: float):
+        def _tier(score: float, daylight_score: float = 1.0):
+            # Night cells return None so the tide-curve overlay leaves them as
+            # the base blue stroke under the night slab shading.
+            if daylight_score < 0.5:
+                return None
             if score >= 0.9:
                 return "prime"
             if score >= 0.75:
@@ -161,7 +165,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         cur_lo = None
         prev_h = None
         for c in cells_sorted:
-            t = _tier(c["score"])
+            t = _tier(c["score"], c.get("daylight_score", 1.0))
             h = c["hour"]
             if t != cur_tier:
                 if cur_tier and prev_h is not None and cur_lo is not None:

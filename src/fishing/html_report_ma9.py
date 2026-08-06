@@ -365,9 +365,13 @@ def _day_wind_badge(row: dict) -> tuple[str, str]:
     return ("BREEZY", "breezy")
 
 
-def _score_cell_class(score: float) -> tuple[str, str]:
+def _score_cell_class(score: float, daylight_score: float = 1.0) -> tuple[str, str]:
     """Continuous score -> (background, foreground) for heatmap cells.
-    Tiers: Prime / Good / Marginal / Poor / Terrible (green -> red gradient)."""
+    Tiers: Prime / Good / Marginal / Poor / Terrible (green -> red gradient).
+    Pre-dawn / post-dusk cells (daylight_score < 0.5) render as a soft gray
+    "Night" tier so darkness reads as darkness, not as conditions being bad."""
+    if daylight_score < 0.5:
+        return ("#E1DFDD", "#605E5C")                # Night     - soft gray
     if score >= 0.9:  return ("#107C10", "#FFFFFF")  # Prime     - saturated green
     if score >= 0.75: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
     if score >= 0.5:  return ("#FFF4CE", "#5C4400")  # Marginal  - yellow
@@ -731,7 +735,7 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         dlabel = day.strftime("%a %b %#d")
         cells = [f"<td class='label'>{dlabel}</td>"]
         for c in row["cells"]:
-            bg, fg = _score_cell_class(c["score"])
+            bg, fg = _score_cell_class(c["score"], c.get("daylight_score", 1.0))
             cls = "tide-marker" if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()) else ""
             tip = _cell_tooltip(c)
             display = f"{c['score']:.2f}".lstrip("0") if c["score"] > 0 else ""
@@ -749,6 +753,7 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         "<span><span class='sw' style='background:#FFF4CE'></span>Marginal</span>"
         "<span><span class='sw' style='background:#FED9B7'></span>Poor</span>"
         "<span><span class='sw' style='background:#A4262C'></span>Terrible</span>"
+        "<span><span class='sw' style='background:#E1DFDD'></span>Night (pre-dawn / post-dusk)</span>"
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
@@ -992,7 +997,11 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
             "terrible": "#A4262C",
         }
 
-        def _tier(score: float) -> Optional[str]:
+        def _tier(score: float, daylight_score: float = 1.0) -> Optional[str]:
+            # Night cells return None so the tide-curve overlay leaves them as
+            # the base blue stroke under the night slab shading.
+            if daylight_score < 0.5:
+                return None
             if score >= 0.9:
                 return "prime"
             if score >= 0.75:
@@ -1009,7 +1018,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         cur_lo: Optional[float] = None
         prev_h: Optional[int] = None
         for c in cells_sorted:
-            t = _tier(c["score"])
+            t = _tier(c["score"], c.get("daylight_score", 1.0))
             h = c["hour"]
             if t != cur_tier:
                 if cur_tier and prev_h is not None and cur_lo is not None:
