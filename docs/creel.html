@@ -1,0 +1,131 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Puget Sound Salmon Pulse</title><style>
+:root{
+  /* Brand blues */
+  --ms-blue:#0078D4; --ms-blue-dark:#106EBE; --ms-blue-darker:#005A9E;
+  --ms-cyan:#00BCF2; --ms-teal:#008272; --ms-purple:#5C2D91;
+  /* Neutrals */
+  --ms-bg:#FAF9F8; --ms-card:#FFFFFF; --ms-border:#E1DFDD; --ms-divider:#EDEBE9;
+  --ms-text:#201F1E; --ms-text-secondary:#605E5C; --ms-text-disabled:#A19F9D;
+  /* Status */
+  --ms-green:#107C10; --ms-yellow:#F2C811; --ms-orange:#D83B01; --ms-red:#A4262C;
+  /* Elevation */
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.08);
+  --shadow-md:0 3px 8px rgba(0,0,0,0.12);
+  --shadow-lg:0 6.4px 14.4px rgba(0,0,0,0.13), 0 1.2px 3.6px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI','Segoe UI Web','Segoe WP',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+     font-size:14px;line-height:1.45;color:var(--ms-text);background:var(--ms-bg)}
+
+/* Header */
+header.page{background:linear-gradient(135deg,var(--ms-blue-darker) 0%,var(--ms-blue) 60%,var(--ms-cyan) 110%);
+            color:#fff;padding:20px 32px;box-shadow:var(--shadow-md);
+            position:sticky;top:0;z-index:50}
+header.page h1{margin:0;font-size:22px;font-weight:600;display:flex;align-items:center}
+header.page .meta{margin-top:4px;font-size:13px;opacity:.92}
+.brand-logo{display:inline-grid;grid-template-columns:repeat(2,10px);gap:2px;margin-right:10px;vertical-align:middle}
+.brand-logo span{width:10px;height:10px;display:block}
+.brand-logo span:nth-child(1){background:#F25022}
+.brand-logo span:nth-child(2){background:#7FBA00}
+.brand-logo span:nth-child(3){background:#00A4EF}
+.brand-logo span:nth-child(4){background:#FFB900}
+
+/* Tab nav */
+nav.tabs{background:#fff;border-bottom:1px solid var(--ms-border);padding:0 32px;
+         position:sticky;top:64px;z-index:40;display:flex;gap:4px;overflow-x:auto;
+         box-shadow:var(--shadow-sm)}
+nav.tabs a{color:var(--ms-text-secondary);text-decoration:none;font-weight:600;font-size:13px;
+           padding:12px 14px;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a:hover{color:var(--ms-blue)}
+nav.tabs a.active{color:var(--ms-blue);border-bottom-color:var(--ms-blue)}
+
+/* Water section */
+.water{padding:24px 32px;border-bottom:1px solid var(--ms-divider)}
+.water h2{margin:0 0 4px;font-size:20px;font-weight:600;color:var(--ms-blue);
+          border-bottom:2px solid var(--ms-blue);padding-bottom:6px;display:inline-block}
+.water .sub{color:var(--ms-text-secondary);font-size:13px;margin:4px 0 16px}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+     padding:14px 16px;position:relative;box-shadow:var(--shadow-sm);overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ms-blue)}
+.kpi.green::before{background:var(--ms-green)}
+.kpi.yellow::before{background:var(--ms-yellow)}
+.kpi.orange::before{background:var(--ms-orange)}
+.kpi.red::before{background:var(--ms-red)}
+.kpi.purple::before{background:var(--ms-purple)}
+.kpi.teal::before{background:var(--ms-teal)}
+.kpi .lbl{font-size:11px;color:var(--ms-text-secondary);text-transform:uppercase;
+          letter-spacing:.5px;font-weight:600;margin-bottom:4px}
+.kpi .val{font-size:28px;font-weight:600;color:var(--ms-text);line-height:1.1}
+.kpi .sub{font-size:12px;color:var(--ms-text-secondary);margin-top:4px}
+
+/* Grid of detail cards */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:1000px){.grid{grid-template-columns:1fr}}
+.card{background:var(--ms-card);border:1px solid var(--ms-border);border-radius:6px;
+      padding:16px 18px;box-shadow:var(--shadow-sm)}
+.card h3{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--ms-purple);
+         text-transform:uppercase;letter-spacing:.5px}
+
+/* Tables */
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+table.dt th,table.dt td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--ms-divider)}
+table.dt th{background:#F3F2F1;color:var(--ms-text-secondary);font-weight:600;font-size:12px;
+            text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0}
+table.dt tr:hover td{background:#F3F2F1}
+table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt tr:last-child td{border-bottom:none}
+
+/* Wind heatmap cells */
+.wind-cell-low{background:#DFF6DD;color:#0B6A0B;font-weight:600}
+.wind-cell-mod{background:#FFF4CE;color:#796300;font-weight:600}
+.wind-cell-high{background:#FED9B7;color:#8A2900;font-weight:600}
+.wind-cell-xhigh{background:#FDE7E9;color:#8E1F25;font-weight:700}
+
+/* Badges & tags */
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;
+       font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#fff;margin-right:6px}
+.badge.b{background:var(--ms-blue)} .badge.g{background:var(--ms-green)}
+.badge.o{background:var(--ms-orange)} .badge.r{background:var(--ms-red)}
+.badge.p{background:var(--ms-purple)} .badge.t{background:var(--ms-teal)}
+.badge.y{background:var(--ms-yellow);color:#3B2F00}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;
+     letter-spacing:.3px;margin-right:6px}
+.tag.b{background:#DEECF9;color:var(--ms-blue-darker)}
+.tag.g{background:#DFF6DD;color:#0B6A0B}
+.tag.r{background:#FDE7E9;color:#8E1F25}
+.tag.o{background:#FED9B7;color:#8A2900}
+.tag.y{background:#FFF4CE;color:#796300}
+.tag.p{background:#E8D6F2;color:#3B1854}
+
+/* Tides */
+.tide-up{color:var(--ms-blue-darker);font-weight:600}
+.tide-dn{color:var(--ms-orange);font-weight:600}
+
+/* Misc */
+.dim{color:var(--ms-text-secondary)}
+pre{background:#F3F2F1;color:var(--ms-text);padding:10px 12px;border-radius:4px;
+    overflow:auto;font-size:12px;max-height:280px;border:1px solid var(--ms-border)}
+details{margin-top:8px}
+details summary{cursor:pointer;color:var(--ms-blue);font-size:13px;font-weight:600}
+ul{margin:6px 0;padding-left:20px}
+li{margin:4px 0}
+footer{padding:18px 32px;color:var(--ms-text-secondary);font-size:12px;
+       border-top:1px solid var(--ms-border);background:#fff}
+
+.creel-hero{padding:26px 32px 20px;background:#003B4F;color:#fff}
+.creel-hero h1{margin:0;font-size:26px;font-weight:650}.creel-hero p{margin:6px 0 0;max-width:850px;color:#D6F2F5}
+.creel-main{padding:22px 32px 34px;max-width:1240px;margin:auto}.signal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.signal{background:#fff;border:1px solid var(--ms-border);border-top:5px solid #0078D4;border-radius:6px;padding:14px;box-shadow:var(--shadow-sm)}
+.signal.surge,.signal.hot-now{border-top-color:#D83B01}.signal.rising{border-top-color:#107C10}.signal.low-sample{border-top-color:#A19F9D}
+.signal .area{font-size:19px;font-weight:700}.signal .state{font-size:11px;font-weight:800;color:var(--ms-text-secondary);letter-spacing:.5px}
+.signal .rate{font-size:30px;font-weight:650;margin-top:8px}.signal .detail{font-size:12px;color:var(--ms-text-secondary)}
+.trend-panel{margin-top:18px;background:#fff;border:1px solid var(--ms-border);border-radius:6px;padding:18px;box-shadow:var(--shadow-sm)}
+.trend-panel h2{margin:0 0 3px;font-size:18px}.trend-panel .sub{color:var(--ms-text-secondary);font-size:12px;margin-bottom:14px}
+.chart-wrap{overflow-x:auto}.creel-chart{display:block;width:100%;min-width:720px;height:auto}.creel-chart text{font-family:'Segoe UI',sans-serif;fill:#605E5C;font-size:11px}
+.method{margin-top:18px;padding:14px 16px;background:#F3F2F1;border-left:4px solid #0078D4;font-size:12px;color:#605E5C}
+@media(max-width:760px){.creel-hero{padding:20px 16px}.creel-main{padding:16px}.signal-grid{grid-template-columns:1fr 1fr}.signal .rate{font-size:25px}}
+</style></head><body><header class='creel-hero'><h1>Puget Sound Salmon Pulse</h1><p>Dock-sample catch rates from the ocean entrance toward Admiralty Inlet. Latest WDFW sample: 2026-08-09.</p></header><nav class='tabs'><a class='' href='index.html'>Forecast</a><a class='' href='mobile.html'>Mobile</a><a class='active' href='creel.html'>Creel Trends</a><a class='' href='gear.html'>Fishing Gear</a><a class='' href='boats.html'>Boats</a></nav><main class='creel-main'><section class='signal-grid'><article class='signal hot-now'><div class='area'>MA5</div><div class='state'>HOT NOW</div><div class='rate'>1.12</div><div class='detail'>coho / angler · 55 fish, 49 anglers<br>no prior catch</div></article><article class='signal steady'><div class='area'>MA6</div><div class='state'>STEADY</div><div class='rate'>0.06</div><div class='detail'>coho / angler · 4 fish, 72 anglers<br>no prior catch</div></article><article class='signal steady'><div class='area'>MA7</div><div class='state'>STEADY</div><div class='rate'>0.15</div><div class='detail'>coho / angler · 3 fish, 20 anglers<br>no prior catch</div></article><article class='signal hot-now'><div class='area'>MA9</div><div class='state'>HOT NOW</div><div class='rate'>0.48</div><div class='detail'>coho / angler · 104 fish, 216 anglers<br>no prior catch</div></article><article class='signal steady'><div class='area'>MA10</div><div class='state'>STEADY</div><div class='rate'>0.25</div><div class='detail'>coho / angler · 66 fish, 263 anglers<br>no prior catch</div></article></section><section class='trend-panel'><h2>Coho movement</h2><div class='sub'>Daily reported coho per interviewed angler. Hover a point for fish and sample counts.</div><div class='chart-wrap'><svg class='creel-chart' viewBox='0 0 1000 330' role='img' aria-label='Reported coho per interviewed angler by marine area'><line x1='52' y1='286.0' x2='982' y2='286.0' stroke='#E1DFDD'/><text x='45' y='290.0' text-anchor='end'>0.00</text><line x1='52' y1='219.5' x2='982' y2='219.5' stroke='#E1DFDD'/><text x='45' y='223.5' text-anchor='end'>0.31</text><line x1='52' y1='153.0' x2='982' y2='153.0' stroke='#E1DFDD'/><text x='45' y='157.0' text-anchor='end'>0.62</text><line x1='52' y1='86.5' x2='982' y2='86.5' stroke='#E1DFDD'/><text x='45' y='90.5' text-anchor='end'>0.94</text><line x1='52' y1='20.0' x2='982' y2='20.0' stroke='#E1DFDD'/><text x='45' y='24.0' text-anchor='end'>1.25</text><path d='M982.0,47.1' fill='none' stroke='#5C2D91' stroke-width='3'/><circle cx='982.0' cy='47.1' r='4' fill='#5C2D91'><title>MA5 2026-08-09: 55 coho / 49 anglers (1.12)</title></circle><path d='M982.0,274.2' fill='none' stroke='#D83B01' stroke-width='3'/><circle cx='982.0' cy='274.2' r='4' fill='#D83B01'><title>MA6 2026-08-09: 4 coho / 72 anglers (0.06)</title></circle><path d='M982.0,254.1' fill='none' stroke='#008272' stroke-width='3'/><circle cx='982.0' cy='254.1' r='4' fill='#008272'><title>MA7 2026-08-09: 3 coho / 20 anglers (0.15)</title></circle><path d='M52.0,286.0 L982.0,182.1' fill='none' stroke='#0078D4' stroke-width='3'/><circle cx='52.0' cy='286.0' r='4' fill='#0078D4'><title>MA9 2026-08-08: 0 coho / 3 anglers (0.00)</title></circle><circle cx='982.0' cy='182.1' r='4' fill='#0078D4'><title>MA9 2026-08-09: 104 coho / 213 anglers (0.49)</title></circle><path d='M52.0,250.5 L982.0,232.2' fill='none' stroke='#8764B8' stroke-width='3'/><circle cx='52.0' cy='250.5' r='4' fill='#8764B8'><title>MA10 2026-08-08: 1 coho / 6 anglers (0.17)</title></circle><circle cx='982.0' cy='232.2' r='4' fill='#8764B8'><title>MA10 2026-08-09: 65 coho / 257 anglers (0.25)</title></circle><text x='52.0' y='312' text-anchor='middle'>08-08</text><text x='982.0' y='312' text-anchor='middle'>08-09</text><line x1='52' y1='328' x2='72' y2='328' stroke='#5C2D91' stroke-width='3'/><text x='77' y='332'>MA5</text><line x1='134' y1='328' x2='154' y2='328' stroke='#D83B01' stroke-width='3'/><text x='159' y='332'>MA6</text><line x1='216' y1='328' x2='236' y2='328' stroke='#008272' stroke-width='3'/><text x='241' y='332'>MA7</text><line x1='298' y1='328' x2='318' y2='328' stroke='#0078D4' stroke-width='3'/><text x='323' y='332'>MA9</text><line x1='380' y1='328' x2='400' y2='328' stroke='#8764B8' stroke-width='3'/><text x='405' y='332'>MA10</text></svg></div></section><div class='method'><b>How to read this:</b> MA5/MA6 rising ahead of MA9 can be an early inbound signal; MA9 rising is the local don't-miss alert, with MA10 carrying the watch after MA9 closes. Rates are fish divided by interviewed anglers, aggregated by catch area, not ramp. HOT NOW marks at least 0.35 coho per angler on a 20-angler sample before enough history exists. SURGE compares the latest 3 sampled days with the prior 7 and requires at least 20 recent and 30 baseline anglers. Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div></main><footer>Source: <a href='https://wdfw.wa.gov/fishing/reports/creel/puget'>WDFW Puget Sound creel reports</a>. Raw rows are archived on each report build.</footer></body></html>

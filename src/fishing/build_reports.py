@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from . import ROOT
+from .creel import build_html as build_creel_html, update_history
 from .html_boats import build_boats_html
 from .html_loadout import build_gear_html
 from .html_report_ma9 import _assemble, build_html as build_desktop
@@ -93,6 +94,20 @@ def main(argv: list[str] | None = None) -> int:
     boats_path = desktop_path.parent / "boats.html"
     boats_path.write_text(build_boats_html(), encoding="utf-8")
     print(f"Wrote {boats_path} ({boats_path.stat().st_size:,} bytes)")
+
+    # WDFW's live page only exposes a rolling window. Merge it into the
+    # persistent cache before rendering so seasonal trends accumulate.
+    creel_path = desktop_path.parent / "creel.html"
+    creel_rows, creel_error = update_history()
+    if creel_rows:
+        creel_path.write_text(build_creel_html(creel_rows, creel_error), encoding="utf-8")
+        print(f"Wrote {creel_path} ({creel_path.stat().st_size:,} bytes)")
+    else:
+        print(
+            f"WARNING: creel data unavailable ({creel_error or 'empty cache'}); "
+            "preserving the last creel page.",
+            file=sys.stderr,
+        )
 
     return 0
 

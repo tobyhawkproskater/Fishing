@@ -25,6 +25,7 @@ from .html_report import CSS, _h
 NAV_LINKS = [
     ("Forecast",     "index.html",  "forecast"),
     ("Mobile",       "mobile.html", "mobile"),
+    ("Creel Trends", "creel.html",  "creel"),
     ("Fishing Gear", "gear.html",   "gear"),
     ("Boats",        "boats.html",  "boats"),
 ]
