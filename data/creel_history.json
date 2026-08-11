@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-11T19:20:20.488645+00:00",
+  "updated": "2026-08-11T21:04:15.603584+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -383,8 +383,8 @@
       "date": "2026-08-09",
       "ramp": "Cornet Bay Public Ramp",
       "catch_area": "Area 7, San Juan Islands",
-      "interviews": 3,
-      "anglers": 7,
+      "interviews": 4,
+      "anglers": 10,
       "chinook": 1,
       "coho": 1,
       "chum": 0,
@@ -877,8 +877,21 @@
       "date": "2026-08-10",
       "ramp": "Cornet Bay Public Ramp",
       "catch_area": "Area 6-2, Eastern portion of Area 6",
-      "interviews": 3,
-      "anglers": 3,
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-10",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 7, San Juan Islands",
+      "interviews": 2,
+      "anglers": 2,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
