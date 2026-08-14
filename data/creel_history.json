@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-14T19:14:28.273373+00:00",
+  "updated": "2026-08-14T19:57:29.383456+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -14141,6 +14141,32 @@
       "anglers": 8,
       "chinook": 0,
       "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-13",
+      "ramp": "Quilcene Tide Flats",
+      "catch_area": "Quilcene, Dabob Bay",
+      "interviews": 6,
+      "anglers": 8,
+      "chinook": 0,
+      "coho": 2,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-14",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 8-1, Deception Pass, Hope Island, and Skagit Bay",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 2,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
