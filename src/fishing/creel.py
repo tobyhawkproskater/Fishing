@@ -9,6 +9,7 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -104,6 +105,30 @@ def parse_creel_html(html_text: str) -> list[dict]:
     return parser.rows
 
 
+class _PagerParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.pages = {0}
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "a":
+            return
+        href = dict(attrs).get("href")
+        if not href:
+            return
+        for value in parse_qs(urlparse(href).query).get("page", []):
+            try:
+                self.pages.add(int(value))
+            except ValueError:
+                pass
+
+
+def _page_numbers(html_text: str) -> set[int]:
+    parser = _PagerParser()
+    parser.feed(html_text)
+    return parser.pages
+
+
 def _load_cache(path: Path = CACHE_PATH) -> list[dict]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -112,11 +137,14 @@ def _load_cache(path: Path = CACHE_PATH) -> list[dict]:
         return []
 
 
-def _fetch_html() -> str:
+def _fetch_page(page: int = 0) -> str:
+    params = {"sample_date": "3"}
+    if page:
+        params["page"] = str(page)
     try:
         response = httpx.get(
             SOURCE_URL,
-            params={"sample_date": "3"},
+            params=params,
             headers={
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -146,7 +174,7 @@ def _fetch_html() -> str:
             "30",
             "--user-agent",
             "Mozilla/5.0 (compatible; MCP-Fishing creel trends)",
-            f"{SOURCE_URL}?sample_date=3",
+            f"{SOURCE_URL}?sample_date=3&page={page}",
         ],
         capture_output=True,
         check=True,
@@ -154,6 +182,12 @@ def _fetch_html() -> str:
         encoding="utf-8",
     )
     return result.stdout
+
+
+def _fetch_html() -> str:
+    first_page = _fetch_page()
+    pages = range(1, max(_page_numbers(first_page)) + 1)
+    return "".join([first_page, *(_fetch_page(page) for page in pages)])
 
 
 def update_history(path: Path = CACHE_PATH) -> tuple[list[dict], str | None]:
@@ -232,7 +266,7 @@ def trend_summary(points: list[dict], area: str) -> dict:
     recent = area_points[-3:]
     baseline = area_points[-10:-3]
     recent_rate, recent_anglers, recent_fish = _period_rate(recent)
-    baseline_rate, baseline_anglers, _ = _period_rate(baseline)
+    baseline_rate, baseline_anglers, baseline_fish = _period_rate(baseline)
     ratio = recent_rate / baseline_rate if baseline_rate > 0 else None
     enough = recent_anglers >= 20 and baseline_anglers >= 30
     if enough and recent_rate >= 0.35 and (baseline_rate < 0.10 or (ratio or 0) >= 2):
@@ -251,7 +285,14 @@ def trend_summary(points: list[dict], area: str) -> dict:
         "rate": recent_rate,
         "anglers": recent_anglers,
         "fish": recent_fish,
+        "interviews": sum(point["interviews"] for point in recent),
+        "recent_days": len(recent),
+        "recent_start": recent[0]["date"] if recent else None,
+        "recent_end": recent[-1]["date"] if recent else None,
         "baseline": baseline_rate,
+        "baseline_anglers": baseline_anglers,
+        "baseline_fish": baseline_fish,
+        "baseline_days": len(baseline),
         "ratio": ratio,
     }
 
@@ -263,10 +304,12 @@ CREEL_CSS = """
 .signal{background:#fff;border:1px solid var(--ms-border);border-top:5px solid #0078D4;border-radius:6px;padding:14px;box-shadow:var(--shadow-sm)}
 .signal.surge,.signal.hot-now{border-top-color:#D83B01}.signal.rising{border-top-color:#107C10}.signal.low-sample{border-top-color:#A19F9D}
 .signal .area{font-size:19px;font-weight:700}.signal .state{font-size:11px;font-weight:800;color:var(--ms-text-secondary);letter-spacing:.5px}
-.signal .rate{font-size:30px;font-weight:650;margin-top:8px}.signal .detail{font-size:12px;color:var(--ms-text-secondary)}
+.signal .rate{font-size:30px;font-weight:650;margin-top:8px}.signal .unit{font-size:11px;color:var(--ms-text-secondary);margin-bottom:10px}
+.signal .detail{font-size:12px;color:var(--ms-text-secondary);line-height:1.5}.signal .comparison{margin-top:8px;padding-top:8px;border-top:1px solid var(--ms-border);color:var(--ms-text)}
 .trend-panel{margin-top:18px;background:#fff;border:1px solid var(--ms-border);border-radius:6px;padding:18px;box-shadow:var(--shadow-sm)}
 .trend-panel h2{margin:0 0 3px;font-size:18px}.trend-panel .sub{color:var(--ms-text-secondary);font-size:12px;margin-bottom:14px}
 .chart-wrap{overflow-x:auto}.creel-chart{display:block;width:100%;min-width:720px;height:auto}.creel-chart text{font-family:'Segoe UI',sans-serif;fill:#605E5C;font-size:11px}
+.sample-table{width:100%;border-collapse:collapse;font-size:13px}.sample-table th,.sample-table td{padding:9px 10px;border-bottom:1px solid var(--ms-border);text-align:right;white-space:nowrap}.sample-table th:first-child,.sample-table td:first-child{text-align:left}.sample-table th{color:var(--ms-text-secondary);font-size:11px;text-transform:uppercase}.sample-table tbody tr:last-child td{border-bottom:0}
 .method{margin-top:18px;padding:14px 16px;background:#F3F2F1;border-left:4px solid #0078D4;font-size:12px;color:#605E5C}
 @media(max-width:760px){.creel-hero{padding:20px 16px}.creel-main{padding:16px}.signal-grid{grid-template-columns:1fr 1fr}.signal .rate{font-size:25px}}
 """
@@ -319,17 +362,60 @@ def _render_chart(points: list[dict]) -> str:
     return "".join(parts)
 
 
+def _comparison_text(item: dict) -> str:
+    if not item["baseline_days"]:
+        return "Prior trend window: not enough sampled days yet"
+    if not item["baseline_anglers"]:
+        return f"Prior {item['baseline_days']} days: no anglers sampled"
+    prior = (
+        f"Prior {item['baseline_days']} days: {item['baseline']:.2f} "
+        f"({item['baseline_fish']} coho / {item['baseline_anglers']} anglers)"
+    )
+    if item["baseline"] == 0:
+        return prior
+    change = (item["rate"] / item["baseline"] - 1) * 100
+    return f"{prior} · Change {change:+.0f}%"
+
+
+def _render_latest_table(points: list[dict]) -> str:
+    rows = []
+    for area in AREAS:
+        area_points = [point for point in points if point["area"] == area]
+        if not area_points:
+            continue
+        point = area_points[-1]
+        rows.append(
+            f"<tr><td><b>{area}</b></td><td>{point['date'][5:]}</td>"
+            f"<td>{point['coho']}</td><td>{point['chinook']}</td>"
+            f"<td>{point['anglers']}</td><td>{point['interviews']}</td>"
+            f"<td>{point['coho_rate']:.2f}</td></tr>"
+        )
+    return (
+        "<div class='chart-wrap'><table class='sample-table'><thead><tr><th>Area</th>"
+        "<th>Date</th><th>Coho</th><th>Chinook</th><th>Anglers</th>"
+        "<th>Interviews</th><th>Coho / angler</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+    )
+
+
 def build_html(rows: list[dict], error: str | None = None) -> str:
     points = aggregate(rows)
     summaries = [trend_summary(points, area) for area in AREAS]
     cards = []
     for item in summaries:
         css_class = item["signal"].lower().replace(" ", "-")
-        baseline = f"baseline {item['baseline']:.2f}" if item["baseline"] else "no prior catch"
+        period = (
+            f"{item['recent_start'][5:]} to {item['recent_end'][5:]}"
+            if item["recent_start"] != item["recent_end"]
+            else item["recent_end"][5:]
+        )
         cards.append(
             f"<article class='signal {css_class}'><div class='area'>{item['area']}</div>"
             f"<div class='state'>{item['signal']}</div><div class='rate'>{item['rate']:.2f}</div>"
-            f"<div class='detail'>coho / angler · {item['fish']} fish, {item['anglers']} anglers<br>{baseline}</div></article>"
+            f"<div class='unit'>coho per angler</div><div class='detail'>"
+            f"Recent {item['recent_days']} days ({period})<br>"
+            f"{item['fish']} coho · {item['anglers']} anglers · {item['interviews']} interviews"
+            f"<div class='comparison'>{_comparison_text(item)}</div></div></article>"
         )
     latest = max((row["date"] for row in rows), default="no data")
     warning = f"<div class='alert'>WDFW refresh failed; showing cached history. {_h(error)}</div>" if error else ""
@@ -342,6 +428,8 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
         f"{render_nav('creel')}<main class='creel-main'>{warning}<section class='signal-grid'>{''.join(cards)}</section>"
         "<section class='trend-panel'><h2>Coho movement</h2><div class='sub'>Daily reported coho per interviewed angler. Hover a point for fish and sample counts.</div>"
         f"<div class='chart-wrap'>{_render_chart(points)}</div></section>"
+        "<section class='trend-panel'><h2>Latest samples by area</h2><div class='sub'>Most recent sampled day available for each tracked marine area.</div>"
+        f"{_render_latest_table(points)}</section>"
         "<div class='method'><b>How to read this:</b> MA5/MA6 rising ahead of MA9 can be an early inbound signal; MA9 rising is the local don't-miss alert, with MA10 carrying the watch after MA9 closes. "
         "Rates are fish divided by interviewed anglers, aggregated by catch area, not ramp. HOT NOW marks at least 0.35 coho per angler on a 20-angler sample before enough history exists. SURGE compares the latest 3 sampled days with the prior 7 and requires at least 20 recent and 30 baseline anglers. "
         "Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div></main>"
