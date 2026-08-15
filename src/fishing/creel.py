@@ -24,6 +24,8 @@ AREAS = {
     "MA5": ("Area 5,",),
     "MA6": ("Area 6,", "Area 6-1,", "Area 6-2,"),
     "MA7": ("Area 7,",),
+    "MA8-1": ("Area 8-1,",),
+    "MA8-2": ("Area 8-2,",),
     "MA9": ("Area 9,",),
     "MA10": ("Area 10,",),
 }
@@ -331,6 +333,8 @@ def _render_chart(points: list[dict]) -> str:
         "MA5": "#5C2D91",
         "MA6": "#D83B01",
         "MA7": "#008272",
+        "MA8-1": "#498205",
+        "MA8-2": "#C239B3",
         "MA9": "#0078D4",
         "MA10": "#8764B8",
     }
@@ -430,7 +434,7 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
         f"<div class='chart-wrap'>{_render_chart(points)}</div></section>"
         "<section class='trend-panel'><h2>Latest samples by area</h2><div class='sub'>Most recent sampled day available for each tracked marine area.</div>"
         f"{_render_latest_table(points)}</section>"
-        "<div class='method'><b>How to read this:</b> MA5/MA6 rising ahead of MA9 can be an early inbound signal; MA9 rising is the local don't-miss alert, with MA10 carrying the watch after MA9 closes. "
+        "<div class='method'><b>How to read this:</b> MA5/MA6 rising can be an early inbound signal; MA7 and MA8-1/MA8-2 show movement toward Admiralty Inlet, while MA9 is the local don't-miss alert and MA10 carries the watch after MA9 closes. "
         "Rates are fish divided by interviewed anglers, aggregated by catch area, not ramp. HOT NOW marks at least 0.35 coho per angler on a 20-angler sample before enough history exists. SURGE compares the latest 3 sampled days with the prior 7 and requires at least 20 recent and 30 baseline anglers. "
         "Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div></main>"
         f"<footer>Source: <a href='{SOURCE_URL}'>WDFW Puget Sound creel reports</a>. Raw rows are archived on each report build.</footer></body></html>"

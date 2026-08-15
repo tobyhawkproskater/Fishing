@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from fishing.creel import _comparison_text, _fetch_html, _page_numbers, trend_summary
+from fishing.creel import _comparison_text, _fetch_html, _page_numbers, aggregate, trend_summary
 
 
 class CreelPaginationTests(unittest.TestCase):
@@ -30,6 +30,27 @@ class CreelPaginationTests(unittest.TestCase):
 
 
 class CreelSummaryTests(unittest.TestCase):
+    def test_areas_8_1_and_8_2_are_aggregated_separately(self) -> None:
+        rows = [
+            {
+                "date": "2026-08-14",
+                "catch_area": catch_area,
+                "anglers": 10,
+                "interviews": 4,
+                "coho": coho,
+                "chinook": 0,
+            }
+            for catch_area, coho in (
+                ("Area 8-1, Deception Pass, Hope Island, and Skagit Bay", 2),
+                ("Area 8-2, Ports Susan and Gardner", 5),
+            )
+        ]
+
+        points = aggregate(rows)
+
+        self.assertEqual([point["area"] for point in points], ["MA8-1", "MA8-2"])
+        self.assertEqual([point["coho_rate"] for point in points], [0.2, 0.5])
+
     def test_zero_baseline_catch_is_not_reported_as_missing_history(self) -> None:
         points = [
             {
