@@ -29,6 +29,9 @@ AREAS = {
     "MA9": ("Area 9,",),
     "MA10": ("Area 10,",),
 }
+# Home water: everything else on this page is context for MA9, so it gets the
+# emphasized treatment in the chart, legend, cards, and table.
+FOCUS_AREA = "MA9"
 
 
 class _CreelTableParser(HTMLParser):
@@ -311,6 +314,10 @@ CREEL_CSS = """
 .trend-panel{margin-top:18px;background:#fff;border:1px solid var(--ms-border);border-radius:6px;padding:18px;box-shadow:var(--shadow-sm)}
 .trend-panel h2{margin:0 0 3px;font-size:18px}.trend-panel .sub{color:var(--ms-text-secondary);font-size:12px;margin-bottom:14px}
 .chart-wrap{overflow-x:auto}.creel-chart{display:block;width:100%;min-width:720px;height:auto}.creel-chart text{font-family:'Segoe UI',sans-serif;fill:#605E5C;font-size:11px}
+.creel-chart text.focus-label{font-size:14px;font-weight:700}
+.signal.focus{box-shadow:0 0 0 3px rgba(0,120,212,.35),var(--shadow-sm)}
+.signal .home{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:9px;background:#0078D4;color:#fff;font-size:10px;font-weight:800;letter-spacing:.4px;vertical-align:middle}
+.sample-table tr.focus td{background:#EFF6FC;font-weight:600;box-shadow:inset 3px 0 0 #0078D4}
 .sample-table{width:100%;border-collapse:collapse;font-size:13px}.sample-table th,.sample-table td{padding:9px 10px;border-bottom:1px solid var(--ms-border);text-align:right;white-space:nowrap}.sample-table th:first-child,.sample-table td:first-child{text-align:left}.sample-table th{color:var(--ms-text-secondary);font-size:11px;text-transform:uppercase}.sample-table tbody tr:last-child td{border-bottom:0}
 .method{margin-top:18px;padding:14px 16px;background:#F3F2F1;border-left:4px solid #0078D4;font-size:12px;color:#605E5C}
 @media(max-width:760px){.creel-hero{padding:20px 16px}.creel-main{padding:16px}.signal-grid{grid-template-columns:1fr 1fr}.signal .rate{font-size:25px}}
@@ -338,7 +345,12 @@ def _render_chart(points: list[dict]) -> str:
         "MA9": "#0078D4",
         "MA10": "#8764B8",
     }
-    for area in AREAS:
+    # MA9 is the home area, so it is drawn last (on top of every other line),
+    # twice as thick, with larger markers and an inline end-of-line label. The
+    # other areas drop to a thinner, semi-transparent stroke so they read as
+    # context rather than competing for attention on a phone screen.
+    for area in sorted(AREAS, key=lambda a: a == FOCUS_AREA):
+        focus = area == FOCUS_AREA
         coords = []
         for index, day in enumerate(days):
             point = by_key.get((day, area))
@@ -349,10 +361,29 @@ def _render_chart(points: list[dict]) -> str:
             coords.append((x, y, point))
         if coords:
             path = " ".join(("M" if i == 0 else "L") + f"{x:.1f},{y:.1f}" for i, (x, y, _) in enumerate(coords))
-            parts.append(f"<path d='{path}' fill='none' stroke='{colors[area]}' stroke-width='3'/>")
+            stroke_w = 6 if focus else 2
+            opacity = 1 if focus else 0.45
+            if focus:
+                # Halo underneath keeps the MA9 line legible where it crosses
+                # a same-hued context line.
+                parts.append(f"<path d='{path}' fill='none' stroke='#FFFFFF' stroke-width='{stroke_w+4}'"
+                             " stroke-linecap='round' stroke-linejoin='round'/>")
+            parts.append(f"<path d='{path}' fill='none' stroke='{colors[area]}' stroke-width='{stroke_w}'"
+                         f" stroke-opacity='{opacity}' stroke-linecap='round' stroke-linejoin='round'/>")
             for x, y, point in coords:
                 title = f"{area} {point['date']}: {point['coho']} coho / {point['anglers']} anglers ({point['coho_rate']:.2f})"
-                parts.append(f"<circle cx='{x:.1f}' cy='{y:.1f}' r='4' fill='{colors[area]}'><title>{_h(title)}</title></circle>")
+                if focus:
+                    parts.append(f"<circle cx='{x:.1f}' cy='{y:.1f}' r='7' fill='{colors[area]}'"
+                                 f" stroke='#FFFFFF' stroke-width='2'><title>{_h(title)}</title></circle>")
+                else:
+                    parts.append(f"<circle cx='{x:.1f}' cy='{y:.1f}' r='3' fill='{colors[area]}'"
+                                 f" fill-opacity='{opacity}'><title>{_h(title)}</title></circle>")
+            if focus:
+                end_x, end_y, _ = coords[-1]
+                anchor = "end" if end_x > width - right - 60 else "start"
+                label_x = end_x - 12 if anchor == "end" else end_x + 12
+                parts.append(f"<text class='focus-label' x='{label_x:.1f}' y='{end_y-13:.1f}'"
+                             f" text-anchor='{anchor}' fill='{colors[area]}'>{FOCUS_AREA}</text>")
     label_step = max(1, len(days) // 6)
     for index, day in enumerate(days):
         if index % label_step == 0 or index == len(days) - 1:
@@ -360,7 +391,14 @@ def _render_chart(points: list[dict]) -> str:
             parts.append(f"<text x='{x:.1f}' y='{height-18}' text-anchor='middle'>{day[5:]}</text>")
     legend_x = left
     for area in AREAS:
-        parts.append(f"<line x1='{legend_x}' y1='{height-2}' x2='{legend_x+20}' y2='{height-2}' stroke='{colors[area]}' stroke-width='3'/><text x='{legend_x+25}' y='{height+2}'>{area}</text>")
+        focus = area == FOCUS_AREA
+        text_attrs = f" class='focus-label' fill='{colors[area]}'" if focus else ""
+        parts.append(
+            f"<line x1='{legend_x}' y1='{height-9}' x2='{legend_x+20}' y2='{height-9}'"
+            f" stroke='{colors[area]}' stroke-width='{6 if focus else 2}'"
+            f" stroke-opacity='{1 if focus else 0.45}' stroke-linecap='round'/>"
+            f"<text{text_attrs} x='{legend_x+25}' y='{height-5}'>{area}</text>"
+        )
         legend_x += 82
     parts.append("</svg>")
     return "".join(parts)
@@ -388,8 +426,9 @@ def _render_latest_table(points: list[dict]) -> str:
         if not area_points:
             continue
         point = area_points[-1]
+        tr = "<tr class='focus'>" if area == FOCUS_AREA else "<tr>"
         rows.append(
-            f"<tr><td><b>{area}</b></td><td>{point['date'][5:]}</td>"
+            f"{tr}<td><b>{area}</b></td><td>{point['date'][5:]}</td>"
             f"<td>{point['coho']}</td><td>{point['chinook']}</td>"
             f"<td>{point['anglers']}</td><td>{point['interviews']}</td>"
             f"<td>{point['coho_rate']:.2f}</td></tr>"
@@ -408,13 +447,17 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
     cards = []
     for item in summaries:
         css_class = item["signal"].lower().replace(" ", "-")
+        focus = item["area"] == FOCUS_AREA
+        if focus:
+            css_class += " focus"
+        badge = "<span class='home'>HOME</span>" if focus else ""
         period = (
             f"{item['recent_start'][5:]} to {item['recent_end'][5:]}"
             if item["recent_start"] != item["recent_end"]
             else item["recent_end"][5:]
         )
         cards.append(
-            f"<article class='signal {css_class}'><div class='area'>{item['area']}</div>"
+            f"<article class='signal {css_class}'><div class='area'>{item['area']}{badge}</div>"
             f"<div class='state'>{item['signal']}</div><div class='rate'>{item['rate']:.2f}</div>"
             f"<div class='unit'>coho per angler</div><div class='detail'>"
             f"Recent {item['recent_days']} days ({period})<br>"
@@ -430,7 +473,7 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
         "<header class='creel-hero'><h1>Puget Sound Salmon Pulse</h1>"
         f"<p>Dock-sample catch rates from the ocean entrance toward Admiralty Inlet. Latest WDFW sample: {_h(latest)}.</p></header>"
         f"{render_nav('creel')}<main class='creel-main'>{warning}<section class='signal-grid'>{''.join(cards)}</section>"
-        "<section class='trend-panel'><h2>Coho movement</h2><div class='sub'>Daily reported coho per interviewed angler. Hover a point for fish and sample counts.</div>"
+        "<section class='trend-panel'><h2>Coho movement</h2><div class='sub'>Daily reported coho per interviewed angler. MA9 (home water) is drawn bold; the other areas are context. Hover a point for fish and sample counts.</div>"
         f"<div class='chart-wrap'>{_render_chart(points)}</div></section>"
         "<section class='trend-panel'><h2>Latest samples by area</h2><div class='sub'>Most recent sampled day available for each tracked marine area.</div>"
         f"{_render_latest_table(points)}</section>"
