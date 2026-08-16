@@ -617,6 +617,10 @@ def _summarize_run(run: list[dict]) -> dict:
     last = dt.datetime.fromisoformat(run[-1]["time"])
     peak = max(run, key=lambda c: c["score"])
     anchor = peak["nearest_tide"] or {}
+    # Average only the hours that actually have a temperature: counting a
+    # missing reading as 0 degrees F dragged the window average far below
+    # anything real.
+    temps = [c["temp_f"] for c in run if c.get("temp_f") is not None]
     return {
         "date": first.date(),
         "start_hour": first.hour,
@@ -631,7 +635,7 @@ def _summarize_run(run: list[dict]) -> dict:
         "tide_height": anchor.get("v"),
         "max_gust": max((c["gust_mph"] or 0) for c in run),
         "max_wind": max((c["wind_mph"] or 0) for c in run),
-        "avg_temp": round(sum((c["temp_f"] or 0) for c in run) / len(run), 1),
+        "avg_temp": round(sum(temps) / len(temps), 1) if temps else None,
     }
 
 
@@ -772,10 +776,12 @@ def _render_window_list(windows: list[dict], limit: int = 8) -> str:
         end = f"{(w['end_hour']+1) % 12 or 12}{'a' if (w['end_hour']+1) < 12 else 'p'}"
         tide_str = (f"{w['tide_kind']} @ {w['tide_time']} ({w['tide_height']} ft)"
                     if w.get("tide_kind") else "\u2014")
+        temp_str = (f"{w['avg_temp']:.0f}\u00b0F" if w.get("avg_temp") is not None
+                    else "\u2014")
         items.append(
             f"<li><div><span class='when'>{date} \u00b7 {start}\u2013{end}</span>"
             f"<div class='why'>Peak near {tide_str} \u00b7 max gust {w['max_gust']:.0f} mph"
-            f" \u00b7 avg {w['avg_temp']:.0f}\u00b0F</div></div>"
+            f" \u00b7 avg {temp_str}</div></div>"
             f"<span class='score'>{w['peak_score']:.2f}</span></li>"
         )
     return f"<ul class='window-list'>{''.join(items)}</ul>"

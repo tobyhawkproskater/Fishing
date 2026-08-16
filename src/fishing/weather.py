@@ -127,6 +127,29 @@ def ndbc_latest(station: str) -> dict:
         return {"source": "NDBC", "station": station, "error": str(e)}
 
 
+LOCAL_TZ_NAME = "America/Los_Angeles"
+
+
+def _local_tz():
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo(LOCAL_TZ_NAME)
+    except Exception:
+        return dt.timezone(dt.timedelta(hours=-8))
+
+
+def _elapsed_local_hours() -> int:
+    """Hours already elapsed today in local (Pacific) time.
+
+    Open-Meteo's `forecast_hours` series starts at the *current* hour, so
+    without this backfill the current day is the only day missing its early
+    hours -- which skews its daily min/max temperature and leaves blank cells
+    in the report. Requesting this many `past_hours` makes every day in the
+    window start at local midnight.
+    """
+    return dt.datetime.now(_local_tz()).hour
+
+
 def _f(v):
     if v is None or v in ("MM", "99.0", "999.0", "9999.0"):
         return None
@@ -148,6 +171,7 @@ def open_meteo(lat: float, lon: float, hours: int = 48) -> dict:
         "temperature_unit": "fahrenheit",
         "precipitation_unit": "inch",
         "forecast_hours": min(hours, 168),
+        "past_hours": _elapsed_local_hours(),
         "timezone": "America/Los_Angeles",
     }
     try:
@@ -194,6 +218,7 @@ def open_meteo_multi(
         "temperature_unit": "fahrenheit",
         "precipitation_unit": "inch",
         "forecast_hours": min(hours, 168),
+        "past_hours": _elapsed_local_hours(),
         "timezone": "America/Los_Angeles",
         "models": ",".join(models),
     }
@@ -353,9 +378,13 @@ def nws_gridpoints_hourly(lat: float, lon: float, hours: int = 168) -> dict:
         local_tz = dt.timezone(dt.timedelta(hours=-8))
 
     rows: list[dict] = []
+    # Start at local midnight today (not "now") so the current day carries a
+    # full 24-hour series like every other day in the window.
+    elapsed = _elapsed_local_hours()
     now_utc = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
-    for k in range(hours):
-        t_utc = now_utc + dt.timedelta(hours=k)
+    start_utc = now_utc - dt.timedelta(hours=elapsed)
+    for k in range(hours + elapsed):
+        t_utc = start_utc + dt.timedelta(hours=k)
         t_local = t_utc.astimezone(local_tz)
         rows.append({
             "time": t_local.strftime("%Y-%m-%dT%H:00"),
@@ -379,6 +408,9 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
       2. ECMWF IFS 0.25\u00b0 for hours 24-168 (what Windy shows by default).
       3. Mean of GFS + ICON (Open-Meteo) + NWS gridpoints fills any gap.
     Direction uses circular mean (weighted in the blend region).
+    Temperature and precipitation do NOT use the blend: they come from a
+    single model (ECMWF, falling back to HRRR then GFS/ICON) for every hour
+    so the current day is directly comparable with the rest of the week.
 
     Returns the same row shape as `open_meteo`, with `sources` listing the
     feeds that contributed and the role each played.
@@ -473,6 +505,19 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
         vals = [o_r.get(field), n_r.get(field)]
         return _circ_mean(vals) if circ else _mean(vals)
 
+    def _pick_thermo(field: str, h_r: dict, e_r: dict, o_r: dict) -> Optional[float]:
+        # Temperature and precipitation use ONE model for the whole window.
+        # The 80/20 HRRR blend above exists to resolve Puget Sound wind
+        # microclimate; applying it to temp/precip only for hours <= 24 put a
+        # model handoff in the middle of day 2 and made the current day's
+        # numbers incomparable with the rest of the week. ECMWF spans all
+        # 168 h, so it is the single source; HRRR/others only fill gaps.
+        if ecmwf_ok and e_r.get(field) is not None:
+            return e_r[field]
+        if hrrr_ok and h_r.get(field) is not None:
+            return h_r[field]
+        return o_r.get(field)
+
     keys = sorted(set(hrrr_hours) | set(ecmwf_hours) | set(other_hours) | set(nws_hours))
     rows: list[dict] = []
     for k in keys:
@@ -486,9 +531,9 @@ def wind_blend(lat: float, lon: float, hours: int = 168) -> dict:
             ahead = 0.0
         rows.append({
             "time": k,
-            # Temp/precip: HRRR best near-term, ECMWF beyond, else Open-Meteo blend.
-            "temp_f": _pick("temp_f", h_r, e_r, o_r, n_r, ahead),
-            "precip_in": _pick("precip_in", h_r, e_r, o_r, n_r, ahead),
+            # Temp/precip: single model across the window (see _pick_thermo).
+            "temp_f": _pick_thermo("temp_f", h_r, e_r, o_r),
+            "precip_in": _pick_thermo("precip_in", h_r, e_r, o_r),
             "wind_mph": _pick("wind_mph", h_r, e_r, o_r, n_r, ahead),
             "gust_mph": _pick("gust_mph", h_r, e_r, o_r, n_r, ahead),
             "wind_dir_deg": _pick("wind_dir_deg", h_r, e_r, o_r, n_r, ahead, circ=True),

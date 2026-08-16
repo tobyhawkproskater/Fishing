@@ -583,7 +583,9 @@ def _render_mobile_windows(windows: list[dict], limit: int = 6) -> str:
         e = f"{end_h % 12 or 12}{'a' if end_h < 12 else 'p'}"
         tide_str = (f"near {w['tide_kind']} {w['tide_time']}"
                     if w.get("tide_kind") else "")
-        why = f"{tide_str} \u00b7 gust {w['max_gust']:.0f} mph \u00b7 {w['avg_temp']:.0f}\u00b0F"
+        why = f"{tide_str} \u00b7 gust {w['max_gust']:.0f} mph"
+        if w.get("avg_temp") is not None:
+            why += f" \u00b7 {w['avg_temp']:.0f}\u00b0F"
         cls = "prime" if w["peak_score"] >= 0.9 and w.get("max_gust", 99) <= 10 else ""
         items.append(
             f"<div class='m-window {cls}'><div>"
