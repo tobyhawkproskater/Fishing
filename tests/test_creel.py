@@ -30,6 +30,29 @@ class CreelPaginationTests(unittest.TestCase):
 
 
 class CreelSummaryTests(unittest.TestCase):
+    def test_area_4_labels_are_aggregated_together(self) -> None:
+        rows = [
+            {
+                "date": "2026-08-14",
+                "catch_area": catch_area,
+                "anglers": anglers,
+                "interviews": 4,
+                "coho": coho,
+                "chinook": 0,
+            }
+            for catch_area, anglers, coho in (
+                ("Area 4, Neah Bay", 20, 8),
+                ("Area 4, Eastern portion", 10, 1),
+            )
+        ]
+
+        points = aggregate(rows)
+
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]["area"], "MA4")
+        self.assertEqual(points[0]["anglers"], 30)
+        self.assertEqual(points[0]["coho_rate"], 0.3)
+
     def test_areas_8_1_and_8_2_are_aggregated_separately(self) -> None:
         rows = [
             {

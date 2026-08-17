@@ -21,6 +21,7 @@ from .html_report import CSS, _h
 SOURCE_URL = "https://wdfw.wa.gov/fishing/reports/creel/puget"
 CACHE_PATH = ROOT / "data" / "creel_history.json"
 AREAS = {
+    "MA4": ("Area 4,",),
     "MA5": ("Area 5,",),
     "MA6": ("Area 6,", "Area 6-1,", "Area 6-2,"),
     "MA7": ("Area 7,",),
@@ -337,6 +338,7 @@ def _render_chart(points: list[dict]) -> str:
         y = top + chart_h - chart_h * tick / 4
         parts.append(f"<line x1='{left}' y1='{y:.1f}' x2='{width-right}' y2='{y:.1f}' stroke='#E1DFDD'/><text x='{left-7}' y='{y+4:.1f}' text-anchor='end'>{rate:.2f}</text>")
     colors = {
+        "MA4": "#C19C00",
         "MA5": "#5C2D91",
         "MA6": "#D83B01",
         "MA7": "#008272",
@@ -477,7 +479,7 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
         f"<div class='chart-wrap'>{_render_chart(points)}</div></section>"
         "<section class='trend-panel'><h2>Latest samples by area</h2><div class='sub'>Most recent sampled day available for each tracked marine area.</div>"
         f"{_render_latest_table(points)}</section>"
-        "<div class='method'><b>How to read this:</b> MA5/MA6 rising can be an early inbound signal; MA7 and MA8-1/MA8-2 show movement toward Admiralty Inlet, while MA9 is the local don't-miss alert and MA10 carries the watch after MA9 closes. "
+        "<div class='method'><b>How to read this:</b> MA4 is the earliest ocean-side signal; MA5/MA6 rising can confirm fish moving into the Strait. MA7 and MA8-1/MA8-2 show movement toward Admiralty Inlet, while MA9 is the local don't-miss alert and MA10 carries the watch after MA9 closes. "
         "Rates are fish divided by interviewed anglers, aggregated by catch area, not ramp. HOT NOW marks at least 0.35 coho per angler on a 20-angler sample before enough history exists. SURGE compares the latest 3 sampled days with the prior 7 and requires at least 20 recent and 30 baseline anglers. "
         "Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div></main>"
         f"<footer>Source: <a href='{SOURCE_URL}'>WDFW Puget Sound creel reports</a>. Raw rows are archived on each report build.</footer></body></html>"
