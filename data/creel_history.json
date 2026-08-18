@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-18T19:41:15.634729+00:00",
+  "updated": "2026-08-18T20:41:21.761027+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -14777,7 +14777,7 @@
       "interviews": 55,
       "anglers": 100,
       "chinook": 3,
-      "coho": 7,
+      "coho": 14,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
@@ -14867,7 +14867,7 @@
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 18,
       "anglers": 33,
-      "chinook": 4,
+      "chinook": 9,
       "coho": 1,
       "chum": 0,
       "pink": 0,
@@ -15427,7 +15427,7 @@
       "interviews": 149,
       "anglers": 368,
       "chinook": 1,
-      "coho": 15,
+      "coho": 21,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
