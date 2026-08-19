@@ -1,7 +1,15 @@
 import unittest
 from unittest.mock import patch
 
-from fishing.creel import _comparison_text, _fetch_html, _page_numbers, aggregate, trend_summary
+from fishing.creel import (
+    HALIBUT_RULE_URL,
+    _comparison_text,
+    _fetch_html,
+    _page_numbers,
+    _render_halibut_section,
+    aggregate,
+    trend_summary,
+)
 
 
 class CreelPaginationTests(unittest.TestCase):
@@ -94,6 +102,18 @@ class CreelSummaryTests(unittest.TestCase):
             _comparison_text(summary),
             "Prior 7 days: 0.00 (0 coho / 70 anglers)",
         )
+
+
+class HalibutSectionTests(unittest.TestCase):
+    def test_halibut_section_has_current_reopening_and_limits(self) -> None:
+        html = _render_halibut_section()
+
+        self.assertIn("Aug. 16-Sept. 30", html)
+        self.assertIn("Marine Areas 5-10", html)
+        self.assertIn("1 fish daily", html)
+        self.assertIn("6 fish annually", html)
+        self.assertIn("80,512 pounds", html)
+        self.assertIn(HALIBUT_RULE_URL, html)
 
 
 if __name__ == "__main__":

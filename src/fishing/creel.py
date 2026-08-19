@@ -19,6 +19,11 @@ from .html_report import CSS, _h
 
 
 SOURCE_URL = "https://wdfw.wa.gov/fishing/reports/creel/puget"
+HALIBUT_RULE_URL = (
+    "https://wdfw.wa.gov/fishing/regulations/emergency-rules/"
+    "summer-halibut-fishery-2026-2026-08"
+)
+HALIBUT_SEASON_URL = "https://wdfw.wa.gov/fishing/regulations/halibut/puget-sound"
 CACHE_PATH = ROOT / "data" / "creel_history.json"
 AREAS = {
     "MA4": ("Area 4,",),
@@ -321,7 +326,9 @@ CREEL_CSS = """
 .sample-table tr.focus td{background:#EFF6FC;font-weight:600;box-shadow:inset 3px 0 0 #0078D4}
 .sample-table{width:100%;border-collapse:collapse;font-size:13px}.sample-table th,.sample-table td{padding:9px 10px;border-bottom:1px solid var(--ms-border);text-align:right;white-space:nowrap}.sample-table th:first-child,.sample-table td:first-child{text-align:left}.sample-table th{color:var(--ms-text-secondary);font-size:11px;text-transform:uppercase}.sample-table tbody tr:last-child td{border-bottom:0}
 .method{margin-top:18px;padding:14px 16px;background:#F3F2F1;border-left:4px solid #0078D4;font-size:12px;color:#605E5C}
+.halibut-panel{margin-top:18px;padding:20px;background:#EAF5F2;border:1px solid #9FD5C8;border-left:5px solid #008272;border-radius:6px}.halibut-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.halibut-head h2{margin:0;font-size:20px}.halibut-head p{margin:4px 0 0;color:var(--ms-text-secondary);font-size:13px}.halibut-status{flex:none;padding:4px 9px;background:#107C10;color:#fff;border-radius:3px;font-size:11px;font-weight:800;letter-spacing:.4px}.halibut-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:16px;border-top:1px solid #9FD5C8;border-bottom:1px solid #9FD5C8}.halibut-fact{padding:12px;border-right:1px solid #9FD5C8}.halibut-fact:last-child{border-right:0}.halibut-fact b{display:block;font-size:14px}.halibut-fact span{display:block;margin-top:2px;color:var(--ms-text-secondary);font-size:11px}.halibut-notes{margin:14px 0 0;padding-left:20px;font-size:13px;line-height:1.55}.halibut-source{margin-top:12px;font-size:12px}
 @media(max-width:760px){.creel-hero{padding:20px 16px}.creel-main{padding:16px}.signal-grid{grid-template-columns:1fr 1fr}.signal .rate{font-size:25px}}
+@media(max-width:760px){.halibut-head{display:block}.halibut-status{display:inline-block;margin-top:10px}.halibut-facts{grid-template-columns:1fr 1fr}.halibut-fact:nth-child(2){border-right:0}.halibut-fact:nth-child(-n+2){border-bottom:1px solid #9FD5C8}}
 """
 
 
@@ -443,6 +450,28 @@ def _render_latest_table(points: list[dict]) -> str:
     )
 
 
+def _render_halibut_section() -> str:
+    return (
+        "<section class='halibut-panel'><div class='halibut-head'><div>"
+        "<h2>Pacific halibut summer fishery</h2>"
+        "<p>Puget Sound and the Strait of Juan de Fuca reopened for a quota-managed summer season.</p>"
+        "</div><span class='halibut-status'>OPEN NOW</span></div>"
+        "<div class='halibut-facts'>"
+        "<div class='halibut-fact'><b>Aug. 16-Sept. 30</b><span>Open daily while quota remains</span></div>"
+        "<div class='halibut-fact'><b>Marine Areas 5-10</b><span>Areas 11-13 remain closed</span></div>"
+        "<div class='halibut-fact'><b>1 fish daily</b><span>No minimum size</span></div>"
+        "<div class='halibut-fact'><b>6 fish annually</b><span>Record immediately on catch card</span></div>"
+        "</div><ul class='halibut-notes'>"
+        "<li>Barbless hooks are required in Marine Areas 5-13.</li>"
+        "<li>Possession limit is two daily limits, but only one daily limit may be aboard the vessel.</li>"
+        "<li>Fish may be cleaned and portioned in the field; retain the carcass until coming ashore.</li>"
+        "<li>Puget Sound quota is 80,512 pounds. The fishery may close before Sept. 30, so check emergency rules before leaving.</li>"
+        "</ul><div class='halibut-source'>Official WDFW: "
+        f"<a href='{HALIBUT_RULE_URL}'>summer halibut emergency rule</a> · "
+        f"<a href='{HALIBUT_SEASON_URL}'>Puget Sound season and quota</a></div></section>"
+    )
+
+
 def build_html(rows: list[dict], error: str | None = None) -> str:
     points = aggregate(rows)
     summaries = [trend_summary(points, area) for area in AREAS]
@@ -481,7 +510,8 @@ def build_html(rows: list[dict], error: str | None = None) -> str:
         f"{_render_latest_table(points)}</section>"
         "<div class='method'><b>How to read this:</b> MA4 is the earliest ocean-side signal; MA5/MA6 rising can confirm fish moving into the Strait. MA7 and MA8-1/MA8-2 show movement toward Admiralty Inlet, while MA9 is the local don't-miss alert and MA10 carries the watch after MA9 closes. "
         "Rates are fish divided by interviewed anglers, aggregated by catch area, not ramp. HOT NOW marks at least 0.35 coho per angler on a 20-angler sample before enough history exists. SURGE compares the latest 3 sampled days with the prior 7 and requires at least 20 recent and 30 baseline anglers. "
-        "Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div></main>"
+        "Small samples are labeled LOW SAMPLE. WDFW calls these raw data subject to QA/QC; catch rate is not total run size or a forecast.</div>"
+        f"{_render_halibut_section()}</main>"
         f"<footer>Source: <a href='{SOURCE_URL}'>WDFW Puget Sound creel reports</a>. Raw rows are archived on each report build.</footer></body></html>"
     )
 
