@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-19T19:39:57.242697+00:00",
+  "updated": "2026-08-19T20:45:55.624660+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -15526,6 +15526,19 @@
     },
     {
       "date": "2026-08-16",
+      "ramp": "Zittels Marina",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 16,
+      "anglers": 35,
+      "chinook": 5,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-16",
       "ramp": "Mason's East Docks (*1159)*",
       "catch_area": "Area 3, La Push",
       "interviews": 2,
@@ -16009,10 +16022,10 @@
       "date": "2026-08-18",
       "ramp": "Armeni Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 4,
-      "anglers": 7,
+      "interviews": 8,
+      "anglers": 15,
       "chinook": 0,
-      "coho": 2,
+      "coho": 4,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
