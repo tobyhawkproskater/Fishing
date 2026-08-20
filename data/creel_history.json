@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-20T18:59:39.108195+00:00",
+  "updated": "2026-08-20T19:46:14.859462+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -15981,6 +15981,19 @@
     },
     {
       "date": "2026-08-17",
+      "ramp": "Point Defiance Public Ramp",
+      "catch_area": "Area 11, Tacoma-Vashon Island",
+      "interviews": 27,
+      "anglers": 52,
+      "chinook": 0,
+      "coho": 5,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-17",
       "ramp": "Saltwater Park Ramp (Hood Canal Rmp Tacoma Light)",
       "catch_area": "Area 12, Hood Canal",
       "interviews": 5,
@@ -15999,6 +16012,19 @@
       "interviews": 2,
       "anglers": 5,
       "chinook": 1,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-17",
+      "ramp": "Point Defiance Public Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 8,
+      "anglers": 13,
+      "chinook": 0,
       "coho": 0,
       "chum": 0,
       "pink": 0,
@@ -16475,8 +16501,47 @@
     },
     {
       "date": "2026-08-19",
+      "ramp": "Zittels Marina",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 8,
+      "anglers": 16,
+      "chinook": 2,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-19",
       "ramp": "Luhr Beach Ramp",
       "catch_area": "Nisqually River",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-20",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 6, East Juan de Fuca Strait",
+      "interviews": 2,
+      "anglers": 4,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-20",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Bellingham Bay",
       "interviews": 1,
       "anglers": 2,
       "chinook": 0,
