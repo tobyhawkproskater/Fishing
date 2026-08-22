@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-22T19:35:06.842225+00:00",
+  "updated": "2026-08-22T20:40:24.714913+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -16932,10 +16932,10 @@
       "date": "2026-08-20",
       "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
       "catch_area": "Area 8-2, Ports Susan and Gardner",
-      "interviews": 75,
-      "anglers": 163,
+      "interviews": 77,
+      "anglers": 166,
       "chinook": 0,
-      "coho": 83,
+      "coho": 84,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
@@ -17664,6 +17664,32 @@
       "anglers": 13,
       "chinook": 0,
       "coho": 1,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-22",
+      "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
+      "catch_area": "Area 8-2, Ports Susan and Gardner",
+      "interviews": 2,
+      "anglers": 5,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-22",
+      "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
+      "catch_area": "Area 9, Admiralty Inlet",
+      "interviews": 2,
+      "anglers": 4,
+      "chinook": 0,
+      "coho": 2,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
