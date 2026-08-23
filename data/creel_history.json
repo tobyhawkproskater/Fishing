@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-23T19:35:38.496498+00:00",
+  "updated": "2026-08-23T20:40:32.319007+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -18262,6 +18262,19 @@
       "anglers": 28,
       "chinook": 0,
       "coho": 4,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-23",
+      "ramp": "Mason's East Docks (*1159)*",
+      "catch_area": "Area 5, Sekiu and Pillar Point",
+      "interviews": 5,
+      "anglers": 10,
+      "chinook": 0,
+      "coho": 18,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
