@@ -427,7 +427,8 @@ def _save_tide_cache(cache: dict) -> None:
         pass
 
 
-def _assemble(start: dt.date) -> dict:
+def _assemble(start: dt.date, water_key: str = WATER_KEY,
+              rules_name: Optional[str] = None) -> dict:
     def _get_tides_resilient(station: str, begin_iso: str, total_days: int) -> dict:
         """Fetch tides with a bulk call first, then day-sized fallbacks on timeout."""
         bulk = noaa_tides(station, date=begin_iso, days=total_days)
@@ -465,7 +466,7 @@ def _assemble(start: dt.date) -> dict:
             "tides": [],
         }
 
-    w = WATERS[WATER_KEY]
+    w = WATERS[water_key]
     profile = _target_profile(start)
     om = wind_blend(w.lat, w.lon, hours=DAYS * 24)
     if "error" in om or not om.get("hours"):
@@ -608,7 +609,7 @@ def _assemble(start: dt.date) -> dict:
         "tides_error": tides.get("error"),
         "tide_station_used": tide_station_used,
         "tide_from_cache": tide_from_cache,
-        "rules": kb.regulations("Marine Area 9"),
+        "rules": kb.regulations(rules_name or w.name),
     }
 
 

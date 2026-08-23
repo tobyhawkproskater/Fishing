@@ -46,9 +46,8 @@ jobs:
       - name: Build reports into docs/
         run: |
           mkdir -p docs
-          # Single process so desktop + mobile share one weather fetch
-          # (otherwise the gust forecast can refresh between runs and the
-          # two reports disagree on the gold PRIME marker).
+          # Single process so the MA9 desktop + mobile pages share one weather
+          # fetch, while the Big Jake page gets its Area 8-2 forecast.
           python -m fishing.build_reports docs/index.html docs/mobile.html
 
       - name: Commit and push if changed

@@ -33,7 +33,9 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                                events_dt: list[tuple[dt.datetime, float, str]],
                                tide_events: list[dict],
                                tide_floor: float = 0.4,
-                               sun: Optional[dict] = None) -> str:
+                               sun: Optional[dict] = None,
+                               tide_reference_ft: float = 2.0,
+                               tide_reference_label: str = "+2 ft float") -> str:
     """Portrait-friendly SVG: same data layers as desktop, larger type."""
     W, H = 600, 320
     PL, PR, PT, PB = 40, 40, 78, 40
@@ -376,14 +378,15 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
                     f"fill='#5C2D91'>{v:.0f}\u00b0F</text>"
                 )
 
-    # +2 ft float line reference
+    # Local dock / launch reference line.
     parts.append(
-        f"<line x1='{PL}' x2='{W - PR}' y1='{y_tide(2):.1f}' y2='{y_tide(2):.1f}' "
+        f"<line x1='{PL}' x2='{W - PR}' y1='{y_tide(tide_reference_ft):.1f}' "
+        f"y2='{y_tide(tide_reference_ft):.1f}' "
         f"stroke='#A4262C' stroke-dasharray='5,3' opacity='0.75'/>"
     )
     parts.append(
-        f"<text x='{PL + 6}' y='{y_tide(2) - 4:.1f}' text-anchor='start' "
-        f"font-size='11' font-weight='700' fill='#A4262C'>+2 ft float</text>"
+        f"<text x='{PL + 6}' y='{y_tide(tide_reference_ft) - 4:.1f}' text-anchor='start' "
+        f"font-size='11' font-weight='700' fill='#A4262C'>{_h(tide_reference_label)}</text>"
     )
 
     # Left axis (tide ft)
@@ -628,7 +631,12 @@ def _lingcod_alert_mobile(start: dt.date) -> str:
 
 # --- page assembly -----------------------------------------------------------
 
-def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> str:
+def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None,
+               *, nav_active: str = "mobile", page_name: str = "MA9 Fishing",
+               location_note: Optional[str] = None,
+               tide_reference_ft: float = 2.0,
+               tide_reference_label: str = "+2 ft float",
+               show_lingcod_alert: bool = True) -> str:
     start = start or dt.date.today()
     if data is None:
         data = _assemble(start)
@@ -662,7 +670,11 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
             if wind_label else ""
         )
         tide_rows = _render_mobile_tides_day(day, data["tide_events"])
-        svg = _render_daily_chart_mobile(day, row["cells"], data["hours_raw"], events_dt, data["tide_events"], tide_floor, row.get("sun"))
+        svg = _render_daily_chart_mobile(
+            day, row["cells"], data["hours_raw"], events_dt,
+            data["tide_events"], tide_floor, row.get("sun"),
+            tide_reference_ft, tide_reference_label,
+        )
         day_cards.append(
             f"<div class='m-card'>"
             f"<div class='m-day-hd'>"
@@ -681,25 +693,27 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
         "<meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'>"
         "<meta name='apple-mobile-web-app-capable' content='yes'>"
         "<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'>"
-        "<meta name='apple-mobile-web-app-title' content='MA9 Fishing'>"
+        f"<meta name='apple-mobile-web-app-title' content='{_h(page_name)}'>"
         "<meta name='theme-color' content='#005A9E'>"
-        f"<title>MA9 \u00b7 {data['start'].strftime('%b %#d')}</title>"
+        f"<title>{_h(page_name)} \u00b7 {data['start'].strftime('%b %#d')}</title>"
         f"<style>{CSS}{EXTRA_CSS}{MOBILE_CSS}{LOADOUT_CSS}</style></head><body>"
         "<header class='m-header'>"
-        f"<h1>MA9 Fishing <span class='target-pill {profile['key']}'>{profile['label']}</span></h1>"
-        f"<div class='meta'>{data['start'].strftime('%a %b %#d')} \u2013 "
+        f"<h1>{_h(page_name)} <span class='target-pill {profile['key']}'>{profile['label']}</span></h1>"
+        + (f"<div class='meta'>{_h(location_note)}</div>" if location_note else "")
+        + f"<div class='meta'>{data['start'].strftime('%a %b %#d')} \u2013 "
         f"{data['end'].strftime('%a %b %#d')} \u00b7 updated {generated}</div>"
         "</header>"
-        f"{render_nav('mobile')}"
+        f"{render_nav(nav_active)}"
         "<section class='m-section'>"
-        + _lingcod_alert_mobile(start)
+        + (_lingcod_alert_mobile(start) if show_lingcod_alert else "")
         + _render_mobile_kpis(data)
         + "<div class='m-card'><h3>Best windows (7 days)</h3>"
         + _render_mobile_windows(data["windows"]) + "</div>"
         + "".join(day_cards)
         + "</section>"
         "<footer>"
-        f"<div>{_h(w.name)} \u00b7 tide station Hansville (9445526) \u00b7 "
+        f"<div>{_h(w.name)} \u00b7 tide station "
+        f"{_h(data.get('tide_station_label') or data.get('tide_station_used') or 'unknown')} \u00b7 "
         f"<b>{profile['label'].title()}</b> profile</div>"
         f"<div>Score = wind \u00d7 precip \u00d7 ({profile['formula_str']}). "
         "Wind/precip are hard multipliers; tide is a soft modifier so flat-calm "

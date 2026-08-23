@@ -39,6 +39,16 @@ PLACES = {
 }
 
 WATERS: dict[str, Water] = {
+    "ma8_2": Water(
+        key="ma8_2",
+        name="Marine Area 8-2 (Sandy Point)",
+        kind="marine",
+        lat=48.040, lon=-122.376,
+        nws_zone="PZZ135",
+        tide_station="9447659",        # Everett, across Possession Sound from Sandy Point
+        ndbc_buoys=("WPOW1",),
+        aliases=("ma8-2", "marine area 8-2", "area 8-2", "sandy point"),
+    ),
     "ma9": Water(
         key="ma9",
         name="Marine Area 9 (Admiralty Inlet)",

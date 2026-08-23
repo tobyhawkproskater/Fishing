@@ -85,21 +85,25 @@ NOAA NWS, NOAA CO-OPS, NDBC, Open-Meteo.
 
 ## HTML reports & published Pages site
 
-Two report generators are available:
+The report site includes:
 
 - `python -m fishing.html_report` � 7-day Fluent-themed HTML for all 6 waters
   (MA9, MA10, Skykomish, Snohomish, Snoqualmie, Lake Sammamish).
 - `python -m fishing.html_report_ma9` � MA9-only deep-dive with tide-x-weather
   heatmap, per-day SVG (tide curve + wind + temp + score strip + best-moment
   badges + +2 ft float-line reference). **This is the canonical template.**
+- `python -m fishing.build_reports docs/index.html docs/mobile.html` builds the
+  desktop MA9 page, mobile MA9 page, and `docs/big-jake.html`, a mobile Area
+  8-2 report for Sandy Point with a zero-foot dock-elevator reference line.
 
-Both write into `reports/` by default; pass an output path to override.
+Standalone report modules write into `reports/` by default; pass an output
+path to override.
 
 ### Always-fresh report on your phone (GitHub Pages)
 
 The repo ships with `.github/workflows/build-report.yml` which runs hourly
-(plus on-demand via *Actions -> Run workflow*) and publishes the MA9 report to
-`docs/index.html` on the `main` branch. To enable:
+(plus on-demand via *Actions -> Run workflow*) and publishes the report site
+from `docs/` on the `main` branch. To enable:
 
 1. Push the repo to GitHub.
 2. **Settings -> Pages -> Source: Deploy from a branch -> Branch: `main` /
