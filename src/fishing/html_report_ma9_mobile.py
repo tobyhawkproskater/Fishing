@@ -404,27 +404,24 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
             f"fill='#D83B01'>{v}</text>"
         )
 
-    # X-axis: every 3 h labeled, hourly ticks
+    # X-axis: compact hourly labels, with AM/PM repeated only at noon and midnight.
     for hr in range(0, 25):
         cx = x_of(hr)
-        tick_h = 5 if hr % 3 == 0 else 2
         parts.append(
-            f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT + IH}' y2='{PT + IH + tick_h}' "
+            f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT + IH}' y2='{PT + IH + 5}' "
             f"stroke='#A19F9D'/>"
         )
-        if hr % 3 == 0:
-            if hr == 0 or hr == 24:
-                label = "12a"
-            elif hr < 12:
-                label = f"{hr}a"
-            elif hr == 12:
-                label = "12p"
-            else:
-                label = f"{hr - 12}p"
-            parts.append(
-                f"<text x='{cx:.1f}' y='{PT + IH + 18}' text-anchor='middle' font-size='11' "
-                f"font-weight='600' fill='var(--ms-text-secondary)'>{label}</text>"
-            )
+        if hr == 0 or hr == 24:
+            label = "12a"
+        elif hr == 12:
+            label = "12p"
+        else:
+            label = str(hr % 12)
+        parts.append(
+            f"<text class='hour-tick-label' x='{cx:.1f}' y='{PT + IH + 18}' "
+            f"text-anchor='middle' font-size='10' font-weight='600' "
+            f"fill='var(--ms-text-secondary)'>{label}</text>"
+        )
 
     # Frame
     parts.append(

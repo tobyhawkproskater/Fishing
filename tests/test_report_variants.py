@@ -23,6 +23,13 @@ class ReportVariantTests(unittest.TestCase):
         self.assertIn("0 ft dock elevator", chart)
         self.assertNotIn("+2 ft float", chart)
 
+    def test_mobile_chart_labels_every_hour(self) -> None:
+        chart = _render_daily_chart_mobile(dt.date(2026, 8, 22), [], [], [], [])
+
+        self.assertEqual(chart.count("class='hour-tick-label'"), 25)
+        self.assertEqual(chart.count(">12a</text>"), 2)
+        self.assertIn(">12p</text>", chart)
+
 
 if __name__ == "__main__":
     unittest.main()
