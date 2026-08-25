@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-25T18:57:30.293612+00:00",
+  "updated": "2026-08-25T19:46:19.090271+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -19155,10 +19155,10 @@
       "date": "2026-08-24",
       "ramp": "John Wayne Marina",
       "catch_area": "Area 6, East Juan de Fuca Strait",
-      "interviews": 1,
-      "anglers": 1,
+      "interviews": 9,
+      "anglers": 20,
       "chinook": 0,
-      "coho": 0,
+      "coho": 9,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
