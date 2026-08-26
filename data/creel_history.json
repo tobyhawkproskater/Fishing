@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-25T23:38:35.039787+00:00",
+  "updated": "2026-08-26T01:59:09.805428+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -7871,8 +7871,8 @@
       "date": "2026-07-26",
       "ramp": "Point Defiance Public Ramp",
       "catch_area": "Area 11, Tacoma-Vashon Island",
-      "interviews": 220,
-      "anglers": 531,
+      "interviews": 219,
+      "anglers": 530,
       "chinook": 17,
       "coho": 5,
       "chum": 0,
@@ -19418,6 +19418,32 @@
       "interviews": 11,
       "anglers": 14,
       "chinook": 29,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-25",
+      "ramp": "Zittels Marina",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 6,
+      "anglers": 10,
+      "chinook": 3,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-25",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 5,
+      "anglers": 6,
+      "chinook": 3,
       "coho": 0,
       "chum": 0,
       "pink": 0,
