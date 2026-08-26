@@ -48,7 +48,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
     def y_tide(v: float) -> float:
         return PT + IH - (v - TIDE_MIN) / (TIDE_MAX - TIDE_MIN) * IH
 
-    WIND_MAX = 30.0
+    WIND_MAX = 20.0
     def y_wind(v: float) -> float:
         return PT + IH - (v / WIND_MAX) * IH
 
@@ -398,7 +398,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         )
 
     # Right axis (wind mph)
-    for v in (0, 10, 20, 30):
+    for v in (0, 10, 20):
         parts.append(
             f"<text x='{W - PR + 4}' y='{y_wind(v) + 4:.1f}' font-size='11' "
             f"fill='#D83B01'>{v}</text>"
