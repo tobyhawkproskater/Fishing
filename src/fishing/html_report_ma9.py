@@ -902,14 +902,21 @@ def _tide_ref_crossings(tide_pts: list[tuple[float, float]],
 
 def _render_ref_crossing_labels(tide_pts: list[tuple[float, float]], ref_ft: float,
                                 x_of, y_tide, font_size: int = 9) -> list[str]:
-    """SVG markers + IN/OUT timestamps for each reference-line crossing."""
+    """SVG markers + IN/OUT timestamps for each reference-line crossing.
+
+    IN (rising) labels sit above the line, OUT (falling) below it. This is
+    keyed off direction rather than crossing order so it stays legible even
+    with more than one open/close cycle in a day (e.g. a mixed semi-diurnal
+    tide dipping below the reference twice) -- same-direction crossings are
+    always far enough apart in time to avoid overlapping on the same side.
+    """
     parts: list[str] = []
     cy = y_tide(ref_ft)
-    for i, (hr, rising) in enumerate(_tide_ref_crossings(tide_pts, ref_ft)):
+    for hr, rising in _tide_ref_crossings(tide_pts, ref_ft):
         cx = x_of(hr)
         tag = "IN" if rising else "OUT"
         label = f"{tag} {_fmt_hour_float_clock(hr)}"
-        ly = cy - 8 if i % 2 == 0 else cy + 8 + font_size
+        ly = cy - 8 if rising else cy + 8 + font_size
         parts.append(f"<circle cx='{cx:.1f}' cy='{cy:.1f}' r='3' fill='#A4262C'/>")
         parts.append(
             f"<text x='{cx:.1f}' y='{ly:.1f}' text-anchor='middle' font-size='{font_size}' "
