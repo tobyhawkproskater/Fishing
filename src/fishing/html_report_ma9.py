@@ -871,6 +871,53 @@ def _fmt_hour_label(hr: int) -> str:
     return f"{hr - 12}p"
 
 
+def _fmt_hour_float_clock(hr: float) -> str:
+    """12-hour clock label for an hour-of-day float, e.g. 5.7 -> '5:42a'."""
+    total_min = round(hr * 60) % (24 * 60)
+    h, m = divmod(total_min, 60)
+    h12 = h % 12 or 12
+    suffix = "a" if h < 12 else "p"
+    return f"{h12}:{m:02d}{suffix}"
+
+
+def _tide_ref_crossings(tide_pts: list[tuple[float, float]],
+                        ref_ft: float) -> list[tuple[float, bool]]:
+    """Times (hour-of-day float) where the tide curve crosses `ref_ft`.
+
+    Returns (hour, rising) pairs -- `rising=True` marks the tide climbing
+    through the reference (the float/launch window opening), `rising=False`
+    marks it dropping back through (the window closing). Linearly
+    interpolates between the 15-min `tide_pts` samples used to draw the
+    curve, so the reported time lands within ~15 min of the true crossing.
+    """
+    out: list[tuple[float, bool]] = []
+    for (h0, v0), (h1, v1) in zip(tide_pts, tide_pts[1:]):
+        if v0 == v1:
+            continue
+        if (v0 < ref_ft <= v1) or (v0 >= ref_ft > v1):
+            frac = (ref_ft - v0) / (v1 - v0)
+            out.append((h0 + frac * (h1 - h0), v1 > v0))
+    return out
+
+
+def _render_ref_crossing_labels(tide_pts: list[tuple[float, float]], ref_ft: float,
+                                x_of, y_tide, font_size: int = 9) -> list[str]:
+    """SVG markers + IN/OUT timestamps for each reference-line crossing."""
+    parts: list[str] = []
+    cy = y_tide(ref_ft)
+    for i, (hr, rising) in enumerate(_tide_ref_crossings(tide_pts, ref_ft)):
+        cx = x_of(hr)
+        tag = "IN" if rising else "OUT"
+        label = f"{tag} {_fmt_hour_float_clock(hr)}"
+        ly = cy - 8 if i % 2 == 0 else cy + 8 + font_size
+        parts.append(f"<circle cx='{cx:.1f}' cy='{cy:.1f}' r='3' fill='#A4262C'/>")
+        parts.append(
+            f"<text x='{cx:.1f}' y='{ly:.1f}' text-anchor='middle' font-size='{font_size}' "
+            f"font-weight='700' fill='#A4262C'>{label}</text>"
+        )
+    return parts
+
+
 def _render_daily_chart(day_date: dt.date, cells: list[dict],
                         hours_raw: list[dict],
                         events_dt: list[tuple[dt.datetime, float, str]],
@@ -1272,6 +1319,11 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
         f"<text x='{PL + 6}' y='{y_tide(2) - 3:.1f}' text-anchor='start' "
         f"font-size='9' font-weight='700' fill='#A4262C'>+2 ft float line</text>"
     )
+    # IN/OUT timestamps where the tide curve crosses the reference line, so
+    # the float window's open/close times are readable directly off the
+    # chart rather than requiring the viewer to eyeball the curve.
+    if tide_pts:
+        parts.extend(_render_ref_crossing_labels(tide_pts, 2.0, x_of, y_tide))
 
     # Left axis (tide ft)
     for v in (-4, 0, 2, 4, 8, 12):

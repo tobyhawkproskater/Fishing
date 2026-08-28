@@ -21,8 +21,8 @@ from .html_loadout import LOADOUT_CSS, render_nav
 from .html_report import CSS, _h, _kind_tag
 from .html_report_ma9 import (
     CAT_GREEN, DAYS, EXTRA_CSS, HOUR_END, HOUR_START, TARGET_CHINOOK,
-    _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _score_cell_class, _tide_at,
-    _window_heart,
+    _assemble, _day_wind_badge, _fmt_clock, _lingcod_alert, _render_ref_crossing_labels,
+    _score_cell_class, _tide_at, _window_heart,
 )
 
 
@@ -388,6 +388,13 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         f"<text x='{PL + 6}' y='{y_tide(tide_reference_ft) - 4:.1f}' text-anchor='start' "
         f"font-size='11' font-weight='700' fill='#A4262C'>{_h(tide_reference_label)}</text>"
     )
+    # IN/OUT timestamps where the tide curve crosses the reference line, so
+    # the float window's open/close times are readable directly off the
+    # chart rather than requiring the viewer to eyeball the curve.
+    if tide_pts:
+        parts.extend(
+            _render_ref_crossing_labels(tide_pts, tide_reference_ft, x_of, y_tide, font_size=10)
+        )
 
     # Left axis (tide ft)
     for v in (0, 2, 5, 10):
