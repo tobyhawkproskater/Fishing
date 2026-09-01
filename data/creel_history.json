@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-31T23:52:11.249468+00:00",
+  "updated": "2026-09-01T05:09:47.001546+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -21811,6 +21811,32 @@
       "anglers": 35,
       "chinook": 0,
       "coho": 33,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-31",
+      "ramp": "Luhr Beach Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 2,
+      "anglers": 3,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-08-31",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 13,
+      "anglers": 17,
+      "chinook": 10,
+      "coho": 0,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
