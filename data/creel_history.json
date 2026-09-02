@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-02T18:43:50.336892+00:00",
+  "updated": "2026-09-02T21:50:37.334964+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -22265,6 +22265,19 @@
       "interviews": 13,
       "anglers": 14,
       "chinook": 16,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-02",
+      "ramp": "Arcadia Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
       "coho": 0,
       "chum": 0,
       "pink": 0,
