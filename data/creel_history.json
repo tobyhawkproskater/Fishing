@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-03T00:17:19.751963+00:00",
+  "updated": "2026-09-03T04:39:50.422212+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -8846,8 +8846,8 @@
       "date": "2026-07-31",
       "ramp": "Point Defiance Public Ramp",
       "catch_area": "Area 11, Tacoma-Vashon Island",
-      "interviews": 95,
-      "anglers": 190,
+      "interviews": 94,
+      "anglers": 186,
       "chinook": 45,
       "coho": 3,
       "chum": 0,
@@ -22273,10 +22273,49 @@
     },
     {
       "date": "2026-09-02",
+      "ramp": "Union Ramp",
+      "catch_area": "Area 12, Hood Canal",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-02",
       "ramp": "Arcadia Ramp",
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 1,
       "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-02",
+      "ramp": "Boston Harbor Ramp/Marina",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 2,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 1,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-02",
+      "ramp": "Quilcene Tide Flats",
+      "catch_area": "Quilcene, Dabob Bay",
+      "interviews": 3,
+      "anglers": 5,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
