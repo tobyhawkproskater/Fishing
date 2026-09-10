@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-10T00:16:15.925775+00:00",
+  "updated": "2026-09-10T04:50:21.556386+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -24684,6 +24684,58 @@
       "anglers": 28,
       "chinook": 0,
       "coho": 52,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-09",
+      "ramp": "Shilshole Public Ramp",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 64,
+      "anglers": 132,
+      "chinook": 1,
+      "coho": 207,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-09",
+      "ramp": "Saltwater Park Ramp (Hood Canal Rmp Tacoma Light)",
+      "catch_area": "Area 12, Hood Canal",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-09",
+      "ramp": "Shilshole Public Ramp",
+      "catch_area": "Area 9, Admiralty Inlet",
+      "interviews": 1,
+      "anglers": 5,
+      "chinook": 0,
+      "coho": 10,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-09",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 3,
+      "anglers": 3,
+      "chinook": 0,
+      "coho": 0,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
