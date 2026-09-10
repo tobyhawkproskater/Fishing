@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-10T18:29:49.663307+00:00",
+  "updated": "2026-09-10T21:39:12.335724+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -20729,7 +20729,7 @@
       "ramp": "Kingston Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
       "interviews": 22,
-      "anglers": 48,
+      "anglers": 49,
       "chinook": 0,
       "coho": 53,
       "chum": 0,
@@ -24736,6 +24736,32 @@
       "anglers": 3,
       "chinook": 0,
       "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-10",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 7, San Juan Islands",
+      "interviews": 5,
+      "anglers": 13,
+      "chinook": 0,
+      "coho": 24,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-10",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 8-1, Deception Pass, Hope Island, and Skagit Bay",
+      "interviews": 6,
+      "anglers": 13,
+      "chinook": 0,
+      "coho": 18,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
