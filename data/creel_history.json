@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-11T18:34:22.939380+00:00",
+  "updated": "2026-09-11T21:44:11.667881+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -25319,6 +25319,45 @@
       "catch_area": "Inner Elliot Bay Fishery Area",
       "interviews": 2,
       "anglers": 3,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-11",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 7, San Juan Islands",
+      "interviews": 5,
+      "anglers": 10,
+      "chinook": 0,
+      "coho": 18,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-11",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 8-1, Deception Pass, Hope Island, and Skagit Bay",
+      "interviews": 4,
+      "anglers": 9,
+      "chinook": 0,
+      "coho": 12,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-11",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 1,
+      "anglers": 1,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
