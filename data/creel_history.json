@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-14T19:22:52.261299+00:00",
+  "updated": "2026-09-14T23:08:55.592000+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -27050,6 +27050,45 @@
       "anglers": 2,
       "chinook": 0,
       "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-14",
+      "ramp": "Cornet Bay Public Ramp",
+      "catch_area": "Area 7, San Juan Islands",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-14",
+      "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
+      "catch_area": "Area 8-2, Ports Susan and Gardner",
+      "interviews": 22,
+      "anglers": 42,
+      "chinook": 0,
+      "coho": 74,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-14",
+      "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
+      "catch_area": "Area 9, Admiralty Inlet",
+      "interviews": 3,
+      "anglers": 7,
+      "chinook": 0,
+      "coho": 6,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
