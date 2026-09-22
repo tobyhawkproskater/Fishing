@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-22T18:55:39.021766+00:00",
+  "updated": "2026-09-22T22:10:17.138362+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -29689,6 +29689,58 @@
       "anglers": 1,
       "chinook": 0,
       "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-21",
+      "ramp": "Cline Spit Ramp",
+      "catch_area": "Area 6, East Juan de Fuca Strait",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 1,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-22",
+      "ramp": "Mukilteo Lighthouse Park (State Park Public Ramp)",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 3,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-22",
+      "ramp": "Mukilteo Lighthouse Park (State Park Public Ramp)",
+      "catch_area": "Area 8-2, Ports Susan and Gardner",
+      "interviews": 7,
+      "anglers": 14,
+      "chinook": 0,
+      "coho": 12,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-22",
+      "ramp": "Mukilteo Lighthouse Park (State Park Public Ramp)",
+      "catch_area": "Area 9, Admiralty Inlet",
+      "interviews": 6,
+      "anglers": 15,
+      "chinook": 0,
+      "coho": 13,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
