@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-22T04:57:35.211860+00:00",
+  "updated": "2026-09-22T09:58:23.777235+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -24329,8 +24329,8 @@
       "date": "2026-09-06",
       "ramp": "Van Riper's North*",
       "catch_area": "Area 5, Sekiu and Pillar Point",
-      "interviews": 33,
-      "anglers": 85,
+      "interviews": 34,
+      "anglers": 88,
       "chinook": 0,
       "coho": 70,
       "chum": 0,
