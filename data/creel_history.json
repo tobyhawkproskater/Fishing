@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-21T23:18:11.488905+00:00",
+  "updated": "2026-09-22T04:57:35.211860+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -10785,7 +10785,7 @@
       "catch_area": "Area 12, Hood Canal",
       "interviews": 13,
       "anglers": 29,
-      "chinook": 49,
+      "chinook": 41,
       "coho": 1,
       "chum": 0,
       "pink": 0,
@@ -18493,7 +18493,7 @@
       "ramp": "Solo Point (Tatsolo Pt-Ft Lewis) Rm",
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 2,
-      "anglers": 3,
+      "anglers": 4,
       "chinook": 4,
       "coho": 0,
       "chum": 0,
@@ -24254,7 +24254,7 @@
       "interviews": 3,
       "anglers": 5,
       "chinook": 0,
-      "coho": 6,
+      "coho": 4,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
@@ -29663,6 +29663,19 @@
       "anglers": 17,
       "chinook": 0,
       "coho": 4,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-09-21",
+      "ramp": "Hartstine Is. Ramp (aka Latimer's Landing)",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 3,
+      "anglers": 4,
+      "chinook": 0,
+      "coho": 0,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
