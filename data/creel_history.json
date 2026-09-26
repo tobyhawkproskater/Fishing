@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-26T17:11:15.386128+00:00",
+  "updated": "2026-09-26T19:52:45.052126+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -30816,10 +30816,10 @@
       "date": "2026-09-25",
       "ramp": "Point Defiance Public Ramp",
       "catch_area": "Area 11, Tacoma-Vashon Island",
-      "interviews": 12,
-      "anglers": 22,
+      "interviews": 16,
+      "anglers": 28,
       "chinook": 0,
-      "coho": 6,
+      "coho": 7,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
