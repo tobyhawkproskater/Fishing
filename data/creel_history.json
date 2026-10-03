@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-03T17:18:11.097374+00:00",
+  "updated": "2026-10-03T21:15:32.900727+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -32935,10 +32935,10 @@
       "date": "2026-10-02",
       "ramp": "Point Defiance Public Ramp",
       "catch_area": "Area 11, Tacoma-Vashon Island",
-      "interviews": 22,
-      "anglers": 36,
+      "interviews": 28,
+      "anglers": 44,
       "chinook": 0,
-      "coho": 18,
+      "coho": 21,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
@@ -33104,6 +33104,19 @@
       "date": "2026-10-02",
       "ramp": "Shilshole Public Ramp",
       "catch_area": "Area 9, Admiralty Inlet",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-03",
+      "ramp": "John Wayne Marina",
+      "catch_area": "Area 6, East Juan de Fuca Strait",
       "interviews": 1,
       "anglers": 1,
       "chinook": 0,
