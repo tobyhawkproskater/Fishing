@@ -2,6 +2,10 @@ import datetime as dt
 import unittest
 
 from fishing.html_loadout import render_nav
+from fishing.html_currents import (
+    LIVE_OCEAN_VIDEO,
+    build_html as build_currents_html,
+)
 from fishing.html_report_ma9 import (
     _fmt_hour_float_clock, _render_daily_chart, _tide_ref_crossings,
 )
@@ -32,8 +36,29 @@ class ReportVariantTests(unittest.TestCase):
         nav = render_nav("big-jake")
 
         self.assertLess(nav.index("Mobile"), nav.index("Big Jake"))
-        self.assertLess(nav.index("Big Jake"), nav.index("Creel Trends"))
+        self.assertLess(nav.index("Big Jake"), nav.index("Currents"))
+        self.assertLess(nav.index("Currents"), nav.index("Creel Trends"))
         self.assertIn("class='active' href='big-jake.html'", nav)
+
+    def test_currents_page_uses_live_feed_and_focus_presets(self) -> None:
+        page = build_currents_html(
+            forecast_start="2026-09-23T00:00:00+00:00",
+            tide_events=[
+                {"time": "2026-09-23T16:29:00-07:00", "type": "H", "height": 10.394}
+            ],
+        )
+
+        self.assertIn(f"src='{LIVE_OCEAN_VIDEO}'", page)
+        self.assertIn("data-focus-button='useless'", page)
+        self.assertIn("data-focus-button='possession'", page)
+        self.assertIn("id='detail-zoom'", page)
+        self.assertIn("650 × 1200 pixels", page)
+        self.assertIn("id='previous-frame'", page)
+        self.assertIn("id='next-frame'", page)
+        self.assertIn("id='forecast-overlay'", page)
+        self.assertIn("2026-09-23T16:29:00-07:00", page)
+        self.assertIn("class='active' href='currents.html'", page)
+        self.assertIn("This is model guidance", page)
 
     def test_chart_supports_zero_tide_dock_reference(self) -> None:
         chart = _render_daily_chart_mobile(

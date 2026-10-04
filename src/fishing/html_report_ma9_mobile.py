@@ -48,7 +48,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
     def y_tide(v: float) -> float:
         return PT + IH - (v - TIDE_MIN) / (TIDE_MAX - TIDE_MIN) * IH
 
-    WIND_MAX = 20.0
+    WIND_MAX = 30.0
     def y_wind(v: float) -> float:
         return PT + IH - (v / WIND_MAX) * IH
 
@@ -405,30 +405,33 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         )
 
     # Right axis (wind mph)
-    for v in (0, 10, 20):
+    for v in (0, 10, 20, 30):
         parts.append(
             f"<text x='{W - PR + 4}' y='{y_wind(v) + 4:.1f}' font-size='11' "
             f"fill='#D83B01'>{v}</text>"
         )
 
-    # X-axis: compact hourly labels, with AM/PM repeated only at noon and midnight.
+    # X-axis: every 3 h labeled, hourly ticks
     for hr in range(0, 25):
         cx = x_of(hr)
+        tick_h = 5 if hr % 3 == 0 else 2
         parts.append(
-            f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT + IH}' y2='{PT + IH + 5}' "
+            f"<line x1='{cx:.1f}' x2='{cx:.1f}' y1='{PT + IH}' y2='{PT + IH + tick_h}' "
             f"stroke='#A19F9D'/>"
         )
-        if hr == 0 or hr == 24:
-            label = "12a"
-        elif hr == 12:
-            label = "12p"
-        else:
-            label = str(hr % 12)
-        parts.append(
-            f"<text class='hour-tick-label' x='{cx:.1f}' y='{PT + IH + 18}' "
-            f"text-anchor='middle' font-size='10' font-weight='600' "
-            f"fill='var(--ms-text-secondary)'>{label}</text>"
-        )
+        if hr % 3 == 0:
+            if hr == 0 or hr == 24:
+                label = "12a"
+            elif hr < 12:
+                label = f"{hr}a"
+            elif hr == 12:
+                label = "12p"
+            else:
+                label = f"{hr - 12}p"
+            parts.append(
+                f"<text x='{cx:.1f}' y='{PT + IH + 18}' text-anchor='middle' font-size='11' "
+                f"font-weight='600' fill='var(--ms-text-secondary)'>{label}</text>"
+            )
 
     # Frame
     parts.append(

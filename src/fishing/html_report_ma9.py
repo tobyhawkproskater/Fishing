@@ -943,7 +943,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
     def y_tide(v: float) -> float:
         return PT + IH - (v - TIDE_MIN) / (TIDE_MAX - TIDE_MIN) * IH
 
-    WIND_MAX = 20.0
+    WIND_MAX = 30.0
     def y_wind(v: float) -> float:
         return PT + IH - (v / WIND_MAX) * IH
 
@@ -1345,7 +1345,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
     )
 
     # Right axis (wind mph)
-    for v in (0, 10, 20):
+    for v in (0, 10, 20, 30):
         parts.append(
             f"<text x='{W - PR + 6}' y='{y_wind(v) + 3:.1f}' font-size='9' "
             f"fill='#D83B01'>{v}</text>"
