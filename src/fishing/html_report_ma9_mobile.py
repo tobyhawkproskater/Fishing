@@ -48,7 +48,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
     def y_tide(v: float) -> float:
         return PT + IH - (v - TIDE_MIN) / (TIDE_MAX - TIDE_MIN) * IH
 
-    WIND_MAX = 30.0
+    WIND_MAX = 20.0
     def y_wind(v: float) -> float:
         return PT + IH - (v / WIND_MAX) * IH
 
@@ -341,17 +341,25 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
     # Wind + gust
     day_hours = [h for h in hours_raw if h.get("time", "").startswith(day_date.isoformat())]
     if day_hours:
-        wind_pts = [(int(h["time"][11:13]), h.get("wind_mph") or 0) for h in day_hours]
-        gust_pts = [(int(h["time"][11:13]), h.get("gust_mph") or 0) for h in day_hours]
-        gust_d = "M " + " L ".join(f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in gust_pts)
-        wind_d = "M " + " L ".join(f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in wind_pts)
-        parts.append(
-            f"<path d='{gust_d}' fill='none' stroke='#D83B01' stroke-width='2' "
-            f"stroke-dasharray='5,3' opacity='0.85'/>"
-        )
-        parts.append(
-            f"<path d='{wind_d}' fill='none' stroke='#D83B01' stroke-width='2.8'/>"
-        )
+        wind_pts = [(int(h["time"][11:13]), h["wind_mph"]) for h in day_hours
+                    if h.get("wind_mph") is not None]
+        gust_pts = [(int(h["time"][11:13]), h["gust_mph"]) for h in day_hours
+                    if h.get("gust_mph") is not None]
+        if gust_pts:
+            gust_d = "M " + " L ".join(
+                f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in gust_pts
+            )
+            parts.append(
+                f"<path d='{gust_d}' fill='none' stroke='#D83B01' stroke-width='2' "
+                f"stroke-dasharray='5,3' opacity='0.85'/>"
+            )
+        if wind_pts:
+            wind_d = "M " + " L ".join(
+                f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in wind_pts
+            )
+            parts.append(
+                f"<path d='{wind_d}' fill='none' stroke='#D83B01' stroke-width='2.8'/>"
+            )
 
     # Temperature with min/max
     if day_hours:
@@ -405,7 +413,7 @@ def _render_daily_chart_mobile(day_date: dt.date, cells: list[dict],
         )
 
     # Right axis (wind mph)
-    for v in (0, 10, 20, 30):
+    for v in (0, 10, 20):
         parts.append(
             f"<text x='{W - PR + 4}' y='{y_wind(v) + 4:.1f}' font-size='11' "
             f"fill='#D83B01'>{v}</text>"

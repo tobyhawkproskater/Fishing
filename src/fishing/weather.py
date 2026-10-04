@@ -159,6 +159,11 @@ def _f(v):
         return None
 
 
+def _hourly_value(hourly: dict, field: str, index: int) -> Optional[float]:
+    values = hourly.get(field) or []
+    return values[index] if index < len(values) else None
+
+
 # --- Open-Meteo wind --------------------------------------------------------
 
 def open_meteo(lat: float, lon: float, hours: int = 48) -> dict:
@@ -185,11 +190,11 @@ def open_meteo(lat: float, lon: float, hours: int = 48) -> dict:
         for i, t in enumerate(times):
             rows.append({
                 "time": t,
-                "temp_f": h.get("temperature_2m", [None])[i],
-                "precip_in": h.get("precipitation", [None])[i],
-                "wind_mph": h.get("wind_speed_10m", [None])[i],
-                "gust_mph": h.get("wind_gusts_10m", [None])[i],
-                "wind_dir_deg": h.get("wind_direction_10m", [None])[i],
+                "temp_f": _hourly_value(h, "temperature_2m", i),
+                "precip_in": _hourly_value(h, "precipitation", i),
+                "wind_mph": _hourly_value(h, "wind_speed_10m", i),
+                "gust_mph": _hourly_value(h, "wind_gusts_10m", i),
+                "wind_dir_deg": _hourly_value(h, "wind_direction_10m", i),
             })
         return {"source": "Open-Meteo", "lat": lat, "lon": lon, "hours": rows}
     except httpx.HTTPError as e:
@@ -268,9 +273,9 @@ def open_meteo_multi(
         return (math.degrees(math.atan2(sx, cx)) + 360.0) % 360.0
 
     for i, t in enumerate(times):
-        winds = [h.get(k, [None])[i] for k in wind_keys]
-        gusts = [h.get(k, [None])[i] for k in gust_keys]
-        dirs = [h.get(k, [None])[i] for k in dir_keys]
+        winds = [_hourly_value(h, k, i) for k in wind_keys]
+        gusts = [_hourly_value(h, k, i) for k in gust_keys]
+        dirs = [_hourly_value(h, k, i) for k in dir_keys]
         rows.append({
             "time": t,
             "temp_f": temp_arr[i] if i < len(temp_arr) else None,

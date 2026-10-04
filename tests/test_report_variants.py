@@ -1,5 +1,6 @@
 import datetime as dt
 import unittest
+from unittest.mock import patch
 
 from fishing.html_loadout import render_nav
 from fishing.html_currents import (
@@ -7,7 +8,14 @@ from fishing.html_currents import (
     build_html as build_currents_html,
 )
 from fishing.html_report_ma9 import (
-    _fmt_hour_float_clock, _render_daily_chart, _tide_ref_crossings,
+    _classify,
+    _day_wind_badge,
+    _assemble,
+    _fmt_hour_float_clock,
+    _render_daily_chart,
+    _tide_ref_crossings,
+    _wind_score,
+    build_html as build_ma9_html,
 )
 from fishing.html_report_ma9_mobile import _render_daily_chart_mobile
 
@@ -131,6 +139,62 @@ class ReportVariantTests(unittest.TestCase):
 
         self.assertEqual(chart.count(">IN "), 1)
         self.assertEqual(chart.count(">OUT "), 1)
+
+    def test_missing_wind_is_not_scored_or_rendered_as_calm(self) -> None:
+        self.assertEqual(_wind_score(None, None), 0.0)
+        self.assertEqual(_classify(True, None, None), "unknown")
+        self.assertEqual(_wind_score(None, 7.0), _wind_score(7.0, 7.0))
+        self.assertEqual(_classify(True, None, 7.0), _classify(True, 7.0, 7.0))
+        self.assertEqual(
+            _day_wind_badge({"cells": [{"wind_mph": None, "gust_mph": None}]}),
+            ("WIND N/A", "unknown"),
+        )
+        self.assertEqual(
+            _day_wind_badge({"cells": [{"wind_mph": None, "gust_mph": 7.0}]}),
+            ("BREEZY", "breezy"),
+        )
+
+        renderers = (_render_daily_chart, _render_daily_chart_mobile)
+        missing_hour = {
+            "time": "2026-08-22T12:00",
+            "wind_mph": None,
+            "gust_mph": None,
+        }
+        for render_chart in renderers:
+            with self.subTest(renderer=render_chart.__name__):
+                chart = render_chart(
+                    dt.date(2026, 8, 22), [], [missing_hour], [], []
+                )
+                self.assertNotIn("stroke='#D83B01'", chart)
+
+    def test_failed_wind_sources_are_reported_and_never_score_as_calm(self) -> None:
+        start = dt.date(2026, 8, 22)
+        with (
+            patch("fishing.html_report_ma9.wind_blend", return_value={"error": "blend failed"}),
+            patch("fishing.html_report_ma9.open_meteo", return_value={"error": "fallback failed"}),
+            patch(
+                "fishing.html_report_ma9.noaa_tides",
+                return_value={"error": "tides unavailable", "tides": []},
+            ),
+            patch("fishing.html_report_ma9._load_tide_cache", return_value={}),
+            patch("fishing.html_report_ma9._save_tide_cache"),
+            patch("fishing.html_report_ma9.nws_marine_forecast", return_value={}),
+            patch(
+                "fishing.html_report_ma9.ndbc_latest",
+                return_value={"station": "WPOW1", "error": "buoy unavailable"},
+            ),
+            patch("fishing.html_report_ma9.kb.regulations", return_value={}),
+        ):
+            data = _assemble(start)
+
+        page = build_ma9_html(data=data)
+        first_cell = data["grid"][0]["cells"][0]
+        self.assertEqual(first_cell["wind_score"], 0.0)
+        self.assertEqual(first_cell["category"], "unknown")
+        self.assertEqual(data["windows"], [])
+        self.assertIn("Wind forecast unavailable", page)
+        self.assertIn("Wind unavailable", page)
+        self.assertIn("blend failed; fallback failed", page)
 
 
 if __name__ == "__main__":

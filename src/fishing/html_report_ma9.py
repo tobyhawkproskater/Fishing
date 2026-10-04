@@ -81,7 +81,9 @@ WATER_KEY = "ma9"
 # A separate day-level wind badge (GLASS / BREEZY / WINDY) signals whether
 # the whole day is fishable regardless of tide phase.
 
-CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF = "green", "yellow", "red", "off"
+CAT_GREEN, CAT_YELLOW, CAT_RED, CAT_OFF, CAT_UNKNOWN = (
+    "green", "yellow", "red", "off", "unknown"
+)
 
 
 # --- Species profile --------------------------------------------------------
@@ -229,8 +231,11 @@ def _wind_score(wind_mph: Optional[float], gust_mph: Optional[float],
     # hour (e.g. wind 4, gust 25) can't be mislabeled PRIME. Tier tables come
     # from the species profile so the numbers stay in one place. Round to
     # whole mph FIRST so the score matches the displayed gust value.
-    w_raw = wind_mph if wind_mph is not None else 0.0
-    g_raw = gust_mph if gust_mph is not None else w_raw
+    if wind_mph is None and gust_mph is None:
+        return 0.0
+    w_raw = wind_mph if wind_mph is not None else gust_mph
+    g_raw = gust_mph if gust_mph is not None else wind_mph
+    assert w_raw is not None and g_raw is not None
     w = int(round(w_raw))
     g = int(round(g_raw))
     def _tier(v: int, tiers) -> float:
@@ -334,10 +339,13 @@ def _window_heart(
 def _classify(in_slack: bool, wind_mph: Optional[float],
               gust_mph: Optional[float],
               profile: dict = TARGET_CHINOOK) -> str:
+    if wind_mph is None and gust_mph is None:
+        return CAT_UNKNOWN
     if not in_slack:
         return CAT_OFF
-    w = wind_mph if wind_mph is not None else 0.0
-    g = gust_mph if gust_mph is not None else 0.0
+    w = wind_mph if wind_mph is not None else gust_mph
+    g = gust_mph if gust_mph is not None else wind_mph
+    assert w is not None and g is not None
     if w > profile["yellow_wind_max"] or g >= profile["green_gust_max"]:
         return CAT_RED
     if w >= profile["green_wind_max"]:
@@ -356,22 +364,32 @@ def _day_wind_badge(row: dict) -> tuple[str, str]:
     cells = row.get("cells") or []
     if not cells:
         return ("", "")
-    max_w = max((c.get("wind_mph") or 0.0) for c in cells)
-    max_g = max((c.get("gust_mph") or 0.0) for c in cells)
-    if max_w <= 7 and max_g < 10:
+    winds = [c["wind_mph"] for c in cells if c.get("wind_mph") is not None]
+    gusts = [c["gust_mph"] for c in cells if c.get("gust_mph") is not None]
+    if not winds and not gusts:
+        return ("WIND N/A", "unknown")
+    max_w = max(winds) if winds else None
+    max_g = max(gusts) if gusts else None
+    if max_w is not None and max_g is not None and max_w <= 7 and max_g < 10:
         return ("GLASS", "glass")
-    if max_w > 15 or max_g >= 25:
+    if (max_w is not None and max_w > 15) or (max_g is not None and max_g >= 25):
         return ("WINDY", "windy")
     return ("BREEZY", "breezy")
 
 
-def _score_cell_class(score: float, daylight_score: float = 1.0) -> tuple[str, str]:
+def _score_cell_class(
+    score: float,
+    daylight_score: float = 1.0,
+    wind_available: bool = True,
+) -> tuple[str, str]:
     """Continuous score -> (background, foreground) for heatmap cells.
     Tiers: Prime / Good / Marginal / Poor / Terrible (green -> red gradient).
     Pre-dawn / post-dusk cells (daylight_score < 0.5) render as a soft gray
     "Night" tier so darkness reads as darkness, not as conditions being bad."""
     if daylight_score < 0.5:
         return ("#E1DFDD", "#605E5C")                # Night     - soft gray
+    if not wind_available:
+        return ("#F3F2F1", "#605E5C")                # Unknown wind - neutral gray
     if score >= 0.9:  return ("#107C10", "#FFFFFF")  # Prime     - saturated green
     if score >= 0.75: return ("#DFF6DD", "#0B6A0B")  # Good      - light green
     if score >= 0.5:  return ("#FFF4CE", "#5C4400")  # Marginal  - yellow
@@ -469,9 +487,33 @@ def _assemble(start: dt.date, water_key: str = WATER_KEY,
     w = WATERS[water_key]
     profile = _target_profile(start)
     om = wind_blend(w.lat, w.lon, hours=DAYS * 24)
-    if "error" in om or not om.get("hours"):
+    wind_errors: list[str] = []
+    if (
+        "error" in om
+        or not om.get("hours")
+        or not any(
+            h.get("wind_mph") is not None or h.get("gust_mph") is not None
+            for h in om["hours"]
+        )
+    ):
+        blend_error = om.get("error")
         # Last-ditch fallback to single-source Open-Meteo if the blend failed.
-        om = open_meteo(w.lat, w.lon, hours=DAYS * 24)
+        fallback = open_meteo(w.lat, w.lon, hours=DAYS * 24)
+        if not fallback.get("hours"):
+            wind_errors = [e for e in (blend_error, fallback.get("error")) if e]
+        om = fallback
+    if not om.get("hours") and not wind_errors:
+        wind_errors.append("No hourly wind data returned.")
+    elif om.get("hours"):
+        missing_wind = sum(
+            h.get("wind_mph") is None and h.get("gust_mph") is None
+            for h in om["hours"]
+        )
+        if missing_wind:
+            wind_errors.append(
+                f"Wind unavailable for {missing_wind} of {len(om['hours'])} forecast hours."
+            )
+    wind_error = "; ".join(wind_errors) or None
     hours = {h["time"]: h for h in om.get("hours", [])}
 
     # Pad ±1 day so cosine tide interpolation has bracketing events at the edges.
@@ -572,6 +614,7 @@ def _assemble(start: dt.date, water_key: str = WATER_KEY,
                 "in_slack": in_slack, "minutes_to_slack": mins,
                 "nearest_tide": t_ev,
                 "wind_mph": wind, "gust_mph": gust, "wind_dir_deg": wdir,
+                "wind_available": wind is not None or gust is not None,
                 "temp_f": temp, "precip_in": precip,
             }
             row["cells"].append(cell)
@@ -604,7 +647,8 @@ def _assemble(start: dt.date, water_key: str = WATER_KEY,
         "marine": nws_marine_forecast(w.nws_zone) if w.nws_zone else {},
         "buoys": [ndbc_latest(b) for b in w.ndbc_buoys],
         "windows": all_windows,
-        "open_meteo_error": om.get("error"),
+        "open_meteo_error": wind_error,
+        "wind_error": wind_error,
         "wind_sources": om.get("sources") or [om.get("source", "Open-Meteo")],
         "tides_error": tides.get("error"),
         "tide_station_used": tide_station_used,
@@ -696,6 +740,7 @@ EXTRA_CSS = """
 .day-badge.glass{background:#DFF6DD;color:#0B6A0B;border-color:#92C593}
 .day-badge.breezy{background:#FFF4CE;color:#5C4400;border-color:#E8C77A}
 .day-badge.windy{background:#FED9B7;color:#8A2900;border-color:#E89F70}
+.day-badge.unknown{background:#F3F2F1;color:#605E5C;border-color:#C8C6C4}
 """
 
 
@@ -714,6 +759,8 @@ def _cell_tooltip(c: dict) -> str:
         f"g{_fmt(c.get('gust_mph'),'',0)} "
         f"{_deg_to_compass(c.get('wind_dir_deg'))}"
     )
+    if c.get("category") == CAT_UNKNOWN:
+        parts.append("wind forecast unavailable")
     if c.get("temp_f") is not None:
         parts.append(f"{c['temp_f']:.0f}\u00b0F")
     if c.get("precip_in"):
@@ -740,10 +787,18 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         dlabel = day.strftime("%a %b %#d")
         cells = [f"<td class='label'>{dlabel}</td>"]
         for c in row["cells"]:
-            bg, fg = _score_cell_class(c["score"], c.get("daylight_score", 1.0))
+            bg, fg = _score_cell_class(
+                c["score"],
+                c.get("daylight_score", 1.0),
+                c.get("wind_available", True),
+            )
             cls = "tide-marker" if c["hour"] in tide_hours_by_day.get(day.isoformat(), set()) else ""
             tip = _cell_tooltip(c)
-            display = f"{c['score']:.2f}".lstrip("0") if c["score"] > 0 else ""
+            display = (
+                "?"
+                if not c.get("wind_available", True)
+                else f"{c['score']:.2f}".lstrip("0") if c["score"] > 0 else ""
+            )
             cells.append(
                 f"<td class='{cls}' style='background:{bg};color:{fg}' "
                 f"title=\"{html.escape(tip)}\">{display}</td>"
@@ -762,6 +817,7 @@ def _render_heatmap(grid: list[dict], tide_events: list[dict]) -> str:
         "<span style='margin-left:14px'>"
         "<span class='sw' style='background:#fff;outline:2px solid #005A9E;outline-offset:-2px'></span>"
         "tide event hour</span>"
+        "<span><span class='sw' style='background:#F3F2F1'></span>Wind unavailable</span>"
         "</div>"
     )
     return legend + "<table class='heatmap'><thead>" + header + "</thead><tbody>" + "".join(rows) + "</tbody></table>"
@@ -797,7 +853,8 @@ def _render_top_kpis(data: dict) -> str:
 
     ideal_hours = sum(1 for row in data["grid"] for c in row["cells"] if c["score"] >= 0.9)
     windy_hrs = sum(1 for row in data["grid"] for c in row["cells"]
-                    if c.get("wind_score", 1.0) == 0 and c["in_slack"])
+                    if c.get("wind_available", True)
+                    and c.get("wind_score", 1.0) == 0 and c["in_slack"])
 
     def _fmt_window(w: Optional[dict]) -> tuple[str, str]:
         if not w:
@@ -943,7 +1000,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
     def y_tide(v: float) -> float:
         return PT + IH - (v - TIDE_MIN) / (TIDE_MAX - TIDE_MIN) * IH
 
-    WIND_MAX = 30.0
+    WIND_MAX = 20.0
     def y_wind(v: float) -> float:
         return PT + IH - (v / WIND_MAX) * IH
 
@@ -1280,17 +1337,21 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
     # Wind + gust
     day_hours = [h for h in hours_raw if h.get("time", "").startswith(day_date.isoformat())]
     if day_hours:
-        wind_pts = [(int(h["time"][11:13]), h.get("wind_mph") or 0) for h in day_hours]
-        gust_pts = [(int(h["time"][11:13]), h.get("gust_mph") or 0) for h in day_hours]
+        wind_pts = [(int(h["time"][11:13]), h["wind_mph"]) for h in day_hours
+                    if h.get("wind_mph") is not None]
+        gust_pts = [(int(h["time"][11:13]), h["gust_mph"]) for h in day_hours
+                    if h.get("gust_mph") is not None]
         gust_d = "M " + " L ".join(f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in gust_pts)
         wind_d = "M " + " L ".join(f"{x_of(hr + 0.5):.1f},{y_wind(v):.1f}" for hr, v in wind_pts)
-        parts.append(
-            f"<path d='{gust_d}' fill='none' stroke='#D83B01' stroke-width='1.5' "
-            f"stroke-dasharray='4,3' opacity='0.85'/>"
-        )
-        parts.append(
-            f"<path d='{wind_d}' fill='none' stroke='#D83B01' stroke-width='2.2'/>"
-        )
+        if gust_pts:
+            parts.append(
+                f"<path d='{gust_d}' fill='none' stroke='#D83B01' stroke-width='1.5' "
+                f"stroke-dasharray='4,3' opacity='0.85'/>"
+            )
+        if wind_pts:
+            parts.append(
+                f"<path d='{wind_d}' fill='none' stroke='#D83B01' stroke-width='2.2'/>"
+            )
 
     # Temperature line + min/max markers
     if day_hours:
@@ -1345,7 +1406,7 @@ def _render_daily_chart(day_date: dt.date, cells: list[dict],
     )
 
     # Right axis (wind mph)
-    for v in (0, 10, 20, 30):
+    for v in (0, 10, 20):
         parts.append(
             f"<text x='{W - PR + 6}' y='{y_wind(v) + 3:.1f}' font-size='9' "
             f"fill='#D83B01'>{v}</text>"
@@ -1447,6 +1508,12 @@ def build_html(start: Optional[dt.date] = None, data: Optional[dict] = None) -> 
 
     # Cards
     cards = []
+    if data.get("wind_error"):
+        cards.append(
+            f"<div class='alert' style='grid-column:1/-1'>"
+            f"<strong>Wind forecast unavailable</strong>: {_h(data['wind_error'])}. "
+            "Wind-based scores are disabled for missing hours.</div>"
+        )
 
     # Best windows (surfaced at the top — the most actionable view)
     cards.append(
