@@ -14,7 +14,8 @@ can generate an up-to-the-minute fishing report on demand.
 ## Setup
 
 Venv lives **outside** the OneDrive-synced project folder to avoid sync
-conflicts during `pip install`:
+conflicts during `pip install` and keep pip/HTTP certificate bundles
+(`cacert.pem`) out of OneDrive. Do not create a project-local `.venv`.
 
 ```powershell
 cd 'C:\Users\tobys\OneDrive - Microsoft\MCP Fishing'
@@ -27,6 +28,14 @@ The pre-install of `cryptography==46.0.3` is required on Windows ARM64: newer
 46.x releases (46.0.4+) have no win-arm64 wheel and pip falls back to a Rust
 build that fails without MSVC. `.vscode\settings.json` points VS Code at the
 external venv automatically.
+
+If VS Code previously selected a project-local `.venv`, use **Python: Select
+Interpreter** to select
+`C:\Users\tobys\.virtualenvs\mcp-fishing\Scripts\python.exe` explicitly.
+The default interpreter setting does not override an existing selection.
+Close old terminals and open a new one after switching. For installs, use
+the external interpreter's full path with `-m pip`, as above, rather than
+an unqualified `pip` command.
 
 ## Build the knowledge base (Phase 1)
 ```powershell

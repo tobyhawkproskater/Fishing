@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\tobys\\.virtualenvs\\mcp-fishing\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.egg-info": true
+  }
+}
