@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-06T02:59:17.335255+00:00",
+  "updated": "2026-10-06T10:19:22.848919+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -33719,6 +33719,19 @@
       "anglers": 3,
       "chinook": 0,
       "coho": 1,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-05",
+      "ramp": "Triton Cove State Park",
+      "catch_area": "Area 12, Hood Canal",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
