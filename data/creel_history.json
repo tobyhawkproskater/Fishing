@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-08T22:05:15.818143+00:00",
+  "updated": "2026-10-09T02:11:09.788941+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -34146,6 +34146,19 @@
       "catch_area": "Area 8-1, Deception Pass, Hope Island, and Skagit Bay",
       "interviews": 1,
       "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-08",
+      "ramp": "Everett Ramp (formerly Norton Street Ramp (2010))",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 1,
+      "anglers": 2,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
