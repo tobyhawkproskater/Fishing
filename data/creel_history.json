@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-09T16:13:50.967570+00:00",
+  "updated": "2026-10-09T20:56:11.051398+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -34092,10 +34092,10 @@
       "date": "2026-10-07",
       "ramp": "Ediz Hook, Port Angeles Public Ramp",
       "catch_area": "Area 6, East Juan de Fuca Strait",
-      "interviews": 5,
-      "anglers": 9,
+      "interviews": 33,
+      "anglers": 59,
       "chinook": 0,
-      "coho": 9,
+      "coho": 37,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
