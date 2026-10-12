@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-12T15:27:14.976528+00:00",
+  "updated": "2026-10-12T23:00:33.236515+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -31544,8 +31544,8 @@
       "date": "2026-09-27",
       "ramp": "Armeni Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 20,
-      "anglers": 51,
+      "interviews": 22,
+      "anglers": 55,
       "chinook": 0,
       "coho": 15,
       "chum": 0,
@@ -34300,8 +34300,8 @@
       "date": "2026-10-10",
       "ramp": "Armeni Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 7,
-      "anglers": 15,
+      "interviews": 12,
+      "anglers": 22,
       "chinook": 0,
       "coho": 4,
       "chum": 0,
