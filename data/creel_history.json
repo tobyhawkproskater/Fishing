@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-20T23:53:29.586546+00:00",
+  "updated": "2026-10-21T04:48:54.556055+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -35615,6 +35615,19 @@
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 1,
       "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-20",
+      "ramp": "Dungeness Bay Public Ramp",
+      "catch_area": "Area 6, East Juan de Fuca Strait",
+      "interviews": 1,
+      "anglers": 1,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
