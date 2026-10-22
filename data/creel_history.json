@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-22T04:47:27.767675+00:00",
+  "updated": "2026-10-22T10:11:46.156260+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -35652,10 +35652,10 @@
       "date": "2026-10-21",
       "ramp": "Kingston Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 1,
-      "anglers": 2,
+      "interviews": 3,
+      "anglers": 6,
       "chinook": 0,
-      "coho": 0,
+      "coho": 1,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
