@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T18:10:13.319422+00:00",
+  "updated": "2026-10-24T20:50:56.997373+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -35925,10 +35925,23 @@
       "date": "2026-10-23",
       "ramp": "Kingston Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 3,
-      "anglers": 3,
+      "interviews": 5,
+      "anglers": 7,
       "chinook": 0,
       "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-23",
+      "ramp": "Shilshole Public Ramp",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 3,
+      "anglers": 6,
+      "chinook": 0,
+      "coho": 1,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
@@ -35982,6 +35995,19 @@
       "chinook": 0,
       "coho": 0,
       "chum": 82,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-24",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 15,
+      "anglers": 27,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 5,
       "pink": 0,
       "sockeye": 0,
       "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
