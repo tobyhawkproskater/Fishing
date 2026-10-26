@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T19:20:27.641146+00:00",
+  "updated": "2026-10-26T23:54:20.047644+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -36198,8 +36198,8 @@
       "date": "2026-10-25",
       "ramp": "Shilshole Public Ramp",
       "catch_area": "Area 10, Seattle-Bremerton area",
-      "interviews": 1,
-      "anglers": 2,
+      "interviews": 2,
+      "anglers": 4,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
