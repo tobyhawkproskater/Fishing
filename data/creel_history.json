@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26T23:54:20.047644+00:00",
+  "updated": "2026-10-27T05:06:09.123903+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -26539,9 +26539,9 @@
       "date": "2026-09-12",
       "ramp": "Bellingham Ramp (Glenn St.) Squalicum Harbor",
       "catch_area": "Bellingham Bay",
-      "interviews": 48,
-      "anglers": 130,
-      "chinook": 31,
+      "interviews": 49,
+      "anglers": 136,
+      "chinook": 30,
       "coho": 93,
       "chum": 0,
       "pink": 0,
@@ -36255,6 +36255,32 @@
       "chinook": 0,
       "coho": 0,
       "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-26",
+      "ramp": "Hartstine Is. Ramp (aka Latimer's Landing)",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 2,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-10-26",
+      "ramp": "Hoodsport Shore",
+      "catch_area": "Hoodsport Hatchery",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 3,
       "pink": 0,
       "sockeye": 0,
       "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
