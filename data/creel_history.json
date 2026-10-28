@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-28T16:03:43.787054+00:00",
+  "updated": "2026-10-28T21:06:12.727494+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -26539,8 +26539,8 @@
       "date": "2026-09-12",
       "ramp": "Bellingham Ramp (Glenn St.) Squalicum Harbor",
       "catch_area": "Bellingham Bay",
-      "interviews": 49,
-      "anglers": 136,
+      "interviews": 50,
+      "anglers": 142,
       "chinook": 30,
       "coho": 93,
       "chum": 0,
