@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T01:22:06.498475+00:00",
+  "updated": "2026-11-04T09:12:56.197439+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -26541,7 +26541,7 @@
       "catch_area": "Bellingham Bay",
       "interviews": 50,
       "anglers": 142,
-      "chinook": 30,
+      "chinook": 31,
       "coho": 93,
       "chum": 0,
       "pink": 0,
@@ -32782,7 +32782,7 @@
       "interviews": 48,
       "anglers": 102,
       "chinook": 2,
-      "coho": 179,
+      "coho": 175,
       "chum": 0,
       "pink": 0,
       "sockeye": 0,
