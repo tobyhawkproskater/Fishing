@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-05T03:30:15.304756+00:00",
+  "updated": "2026-11-05T12:21:54.875751+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -36755,6 +36755,19 @@
     },
     {
       "date": "2026-11-04",
+      "ramp": "Point Defiance Public Ramp",
+      "catch_area": "Area 11, Tacoma-Vashon Island",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-04",
       "ramp": "East Bay Marina/Ramp (Oly. Isle)",
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 1,
@@ -36773,6 +36786,19 @@
       "interviews": 1,
       "anglers": 1,
       "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-04",
+      "ramp": "Point Defiance Public Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 2,
       "coho": 0,
       "chum": 0,
       "pink": 0,
