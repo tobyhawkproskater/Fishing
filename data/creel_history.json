@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-04T22:39:49.966517+00:00",
+  "updated": "2026-11-05T03:30:15.304756+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -36747,6 +36747,32 @@
       "interviews": 1,
       "anglers": 1,
       "chinook": 1,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-04",
+      "ramp": "East Bay Marina/Ramp (Oly. Isle)",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-04",
+      "ramp": "Gig Harbor Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
       "coho": 0,
       "chum": 0,
       "pink": 0,
