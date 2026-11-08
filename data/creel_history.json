@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T19:42:26.660903+00:00",
+  "updated": "2026-11-08T23:43:20.782949+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -36822,6 +36822,19 @@
       "date": "2026-11-06",
       "ramp": "Point Defiance Public Ramp",
       "catch_area": "Area 11, Tacoma-Vashon Island",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-07",
+      "ramp": "Edmonds Dry Storage (Boat Loft (Priv. fork lift))",
+      "catch_area": "Area 10, Seattle-Bremerton area",
       "interviews": 1,
       "anglers": 2,
       "chinook": 0,
