@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T23:43:20.782949+00:00",
+  "updated": "2026-11-09T06:29:59.061729+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -36903,6 +36903,45 @@
       "interviews": 3,
       "anglers": 4,
       "chinook": 1,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-08",
+      "ramp": "Shilshole Public Ramp",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 1,
+      "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-08",
+      "ramp": "Gig Harbor Ramp",
+      "catch_area": "Area 11, Tacoma-Vashon Island",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-08",
+      "ramp": "Point Defiance Public Ramp",
+      "catch_area": "Area 11, Tacoma-Vashon Island",
+      "interviews": 1,
+      "anglers": 2,
+      "chinook": 0,
       "coho": 0,
       "chum": 0,
       "pink": 0,
