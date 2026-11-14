@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-13T22:38:26.555302+00:00",
+  "updated": "2026-11-14T03:17:38.759494+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -37032,6 +37032,32 @@
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 3,
       "anglers": 3,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-13",
+      "ramp": "Shilshole Public Ramp",
+      "catch_area": "Area 10, Seattle-Bremerton area",
+      "interviews": 2,
+      "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-13",
+      "ramp": "Gig Harbor Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 2,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
