@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-16T20:29:49.943556+00:00",
+  "updated": "2026-11-17T03:55:30.026729+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -37188,6 +37188,19 @@
       "catch_area": "Area 9, Admiralty Inlet",
       "interviews": 1,
       "anglers": 2,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-16",
+      "ramp": "Luhr Beach Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 1,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
