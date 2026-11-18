@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-17T22:24:56.904512+00:00",
+  "updated": "2026-11-18T04:22:15.254149+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -37201,6 +37201,19 @@
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 1,
       "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-17",
+      "ramp": "Gig Harbor Ramp",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 2,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
