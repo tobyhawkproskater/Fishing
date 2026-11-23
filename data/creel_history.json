@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22T19:41:10.978856+00:00",
+  "updated": "2026-11-23T00:54:52.416536+00:00",
   "source": "https://wdfw.wa.gov/fishing/reports/creel/puget",
   "rows": [
     {
@@ -37331,6 +37331,19 @@
       "catch_area": "Area 13, South Puget Sound",
       "interviews": 1,
       "anglers": 1,
+      "chinook": 0,
+      "coho": 0,
+      "chum": 0,
+      "pink": 0,
+      "sockeye": 0,
+      "source": "https://wdfw.wa.gov/fishing/reports/creel/puget"
+    },
+    {
+      "date": "2026-11-22",
+      "ramp": "Hartstine Is. Ramp (aka Latimer's Landing)",
+      "catch_area": "Area 13, South Puget Sound",
+      "interviews": 1,
+      "anglers": 2,
       "chinook": 0,
       "coho": 0,
       "chum": 0,
